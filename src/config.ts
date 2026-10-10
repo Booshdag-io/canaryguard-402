@@ -2,6 +2,7 @@ import { getAddress, isAddress } from 'viem';
 import { z } from 'zod';
 
 export const NETWORK = 'eip155:8453' as const;
+export const SERVICE_VERSION = '1.0.1';
 export const ASSET = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 export const RECIPIENT = '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1';
 export const DESCRIPTION = 'Deterministic prompt-injection firewall and honeypot scrubber for AI agents. Sanitizes untrusted text and blocks detected wallet-draining commands before context ingestion.';

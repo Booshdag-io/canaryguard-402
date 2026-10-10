@@ -4,7 +4,7 @@ import { createPaymentWrapper, type WrappedToolResult } from '@x402/mcp';
 import { declareDiscoveryExtension } from '@x402/extensions/bazaar';
 import type { Request, Response } from 'express';
 import type { x402ResourceServer } from '@x402/core/server';
-import { Input, inputJsonSchema, paymentOption, TOOL_DESCRIPTION } from './config.js';
+import { Input, inputJsonSchema, paymentOption, SERVICE_VERSION, TOOL_DESCRIPTION } from './config.js';
 import { sanitizeContent } from './sanitize.js';
 import { fingerprint } from './retries.js';
 
@@ -19,7 +19,7 @@ export async function mcpHandler(resourceServer: x402ResourceServer, publicUrl: 
     return { content: [{ type: 'text' as const, text: JSON.stringify(result) }], structuredContent: result };
   });
   return async (req: Request, res: Response) => {
-    const mcp = new McpServer({ name: 'canaryguard-402', version: '1.0.0' });
+    const mcp = new McpServer({ name: 'canaryguard-402', version: SERVICE_VERSION });
     mcp.registerTool('canary_sanitize', { description: TOOL_DESCRIPTION, inputSchema: Input.shape,
       annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: false } }, async (args, extra) => {
       const payment = extra._meta?.['x402/payment'];

@@ -3,7 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
 import type { createPayments } from './payments.js';
-import { ASSET, DESCRIPTION, Input, inputJsonSchema, NETWORK } from './config.js';
+import { ASSET, DESCRIPTION, Input, inputJsonSchema, NETWORK, SERVICE_VERSION } from './config.js';
 import { sanitizeContent } from './sanitize.js';
 import { receiptRetries } from './retries.js';
 import { mcpHandler } from './mcp.js';
@@ -23,7 +23,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     mcp: { url: payments.config.publicUrl + '/mcp', tool: 'canary_sanitize', transport: 'streamable-http' },
     limits: { content_characters: 50000, body_bytes: 262144, idempotency: 'volatile, single instance, 10 minutes' },
     disclaimer: 'Rule-based inspection has incomplete coverage. The receipt is a processing marker, not a safety guarantee.' }));
-  app.get('/.well-known/mcp/server-card.json', (_req, res) => res.json({ serverInfo: { name: 'canaryguard-402', version: '1.0.0' },
+  app.get('/.well-known/mcp/server-card.json', (_req, res) => res.json({ serverInfo: { name: 'canaryguard-402', version: SERVICE_VERSION },
     description: DESCRIPTION, transport: { type: 'streamable-http', url: payments.config.publicUrl + '/mcp' },
     capabilities: { tools: {} }, tools: [{ name: 'canary_sanitize', description: DESCRIPTION, inputSchema: inputJsonSchema }] }));
   app.use(rateLimit({ windowMs: 60000, limit: 120, standardHeaders: 'draft-8', legacyHeaders: false,
