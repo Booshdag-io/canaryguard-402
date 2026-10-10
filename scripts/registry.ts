@@ -64,7 +64,9 @@ async function main() {
   if (health.status !== 'ok' || health.service !== 'canaryguard-402') throw new Error('Unexpected public health response');
 
   const searchUrl = new URL('/platform/v2/x402/discovery/search', API_ORIGIN);
-  searchUrl.search = new URLSearchParams({ urlSubstring: resource, payTo: RECIPIENT, network: NETWORK, limit: '20' }).toString();
+  // Narrow by hostname remotely, then verify the exact URL and payment fields
+  // locally. Combined full-URL/recipient/network filters can miss a new listing.
+  searchUrl.search = new URLSearchParams({ urlSubstring: new URL(origin).hostname, limit: '20' }).toString();
   const [validation, search] = await Promise.allSettled([
     requestJson(new URL('/platform/v2/x402/validate', API_ORIGIN), {
       method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
