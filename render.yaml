@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: canaryguard-402
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: X402_RECIPIENT_ADDRESS
+        value: 0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1
+      - key: NETWORK
+        value: base
+      - key: PUBLIC_URL
+        value: https://canaryguard-402.onrender.com
+      - key: CDP_API_KEY_ID
+        sync: false
+      - key: CDP_API_KEY_SECRET
+        sync: false

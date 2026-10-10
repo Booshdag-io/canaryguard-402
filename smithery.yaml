@@ -1,0 +1,16 @@
+# Legacy repository/container descriptor. This file does not submit a listing.
+# Current external URL publishing: https://smithery.ai/docs/build/publish
+# Publish https://canaryguard-402.onrender.com/mcp through the UI or authenticated CLI.
+# Runtime CDP credentials must be configured by the operator privately;
+# never put a buyer key or CDP secret in this file or client configSchema.
+runtime: container
+build:
+  dockerfile: Dockerfile
+  dockerBuildPath: .
+startCommand:
+  type: http
+  configSchema:
+    type: object
+    properties: {}
+    additionalProperties: false
+  exampleConfig: {}
