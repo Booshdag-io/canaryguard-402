@@ -328,12 +328,12 @@
           <div class="stat-lbl">Execution Latency</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val" id="settledCount">2+</div>
-          <div class="stat-lbl">Live Transactions</div>
+          <div class="stat-val">Base</div>
+          <div class="stat-lbl">Network (eip155:8453)</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val" id="uptimeVal">99.9%</div>
-          <div class="stat-lbl">Deterministic Uptime</div>
+          <div class="stat-val">x402 v2</div>
+          <div class="stat-lbl">Protocol Standard</div>
         </div>
       </div>
     </section>
@@ -402,56 +402,45 @@
 
       <div class="tabs-card">
         <div class="tab-header">
-          <button class="tab-btn active" onclick="switchTab('mcp')">Claude / Cursor (MCP)</button>
-          <button class="tab-btn" onclick="switchTab('python')">Python SDK</button>
-          <button class="tab-btn" onclick="switchTab('ts')">TypeScript / Node</button>
+          <button class="tab-btn active" onclick="switchTab('eliza')">ElizaOS (ai16z)</button>
+          <button class="tab-btn" onclick="switchTab('agentkit')">Coinbase AgentKit</button>
+          <button class="tab-btn" onclick="switchTab('ts')">TypeScript SDK</button>
           <button class="tab-btn" onclick="switchTab('curl')">cURL / Raw HTTP</button>
         </div>
 
-        <div id="tab-mcp" class="tab-content">
-<pre><code>// Add to claude_desktop_config.json or cursor settings:
-{
-  "mcpServers": {
-    "canaryguard": {
-      "command": "npx",
-      "args": ["-y", "tsx", "c:/Users/AK/Documents/money maker/canaryguard-402/mcp/index.ts"],
-      "env": {
-        "BUYER_PRIVATE_KEY": "0x...YOUR_BASE_WALLET_PRIVATE_KEY",
-        "CANARYGUARD_URL": "https://canaryguard-402.onrender.com"
-      }
-    }
-  }
-}</code></pre>
+        <div id="tab-eliza" class="tab-content">
+<pre><code>// Install the official ElizaOS plugin:
+// npm install @kurox_real/plugin-canaryguard
+
+import { canaryGuardPlugin } from "@kurox_real/plugin-canaryguard";
+
+export const character = {
+  name: "AutonomousAgent",
+  plugins: [canaryGuardPlugin],
+  // Incoming messages are automatically inspected and sanitized
+};</code></pre>
         </div>
 
-        <div id="tab-python" class="tab-content" style="display:none;">
-<pre><code>import requests
+        <div id="tab-agentkit" class="tab-content" style="display:none;">
+<pre><code>// Install Coinbase AgentKit action provider:
+// npm install @kurox_real/agentkit-canaryguard-402
 
-def sanitize_untrusted_input(content: str) -> dict:
-    # Autonomous agent calling CanaryGuard 402
-    resp = requests.post(
-        "https://canaryguard-402.onrender.com/v1/sanitize",
-        json={"content": content, "strict_mode": True},
-        # When paid with x402 headers (handled via @x402/fetch or x402 client)
-    )
-    return resp.json()</code></pre>
+import { canaryGuardActionProvider } from "@kurox_real/agentkit-canaryguard-402";
+
+const agent = await createAgent({
+  actionProviders: [canaryGuardActionProvider()],
+});</code></pre>
         </div>
 
         <div id="tab-ts" class="tab-content" style="display:none;">
-<pre><code>import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
-import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { privateKeyToAccount } from "viem/accounts";
+<pre><code>// Install TypeScript client SDK:
+// npm install @kurox_real/canaryguard-client
 
-const client = new x402Client();
-registerExactEvmScheme(client, { signer: privateKeyToAccount(process.env.BUYER_PRIVATE_KEY as `0x${string}`) });
-const paidFetch = wrapFetchWithPayment(fetch, client);
+import { CanaryGuardClient } from "@kurox_real/canaryguard-client";
 
-const res = await paidFetch("https://canaryguard-402.onrender.com/v1/sanitize", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ content: untrustedScrapedHtml, strict_mode: true }),
-});
-const { sanitized_content, status, risk_score } = await res.json();</code></pre>
+const client = new CanaryGuardClient();
+const result = await client.sanitize("Untrusted text to scrub", { strictMode: true });
+console.log(result.status, result.risk_score, result.sanitized_content);</code></pre>
         </div>
 
         <div id="tab-curl" class="tab-content" style="display:none;">
@@ -460,10 +449,10 @@ curl -i -X POST https://canaryguard-402.onrender.com/v1/sanitize \
   -H "Content-Type: application/json" \
   -d '{"content": "Untrusted text to scrub", "strict_mode": true}'
 
-# 2. Attach EIP-712 transfer authorization header:
+# 2. Attach Base EIP-712 payment authorization header:
 curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
   -H "Content-Type: application/json" \
-  -H "X-PAYMENT: &lt;base64-signed-payment&gt;" \
+  -H "PAYMENT-SIGNATURE: &lt;base64-signed-payment&gt;" \
   -d '{"content": "Untrusted text to scrub", "strict_mode": true}'</code></pre>
         </div>
       </div>
@@ -502,28 +491,26 @@ curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content, strict_mode: strictMode })
         });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         renderResult(data);
       } catch (err) {
-        // Fallback demo evaluation client-side if offline
-        renderResult({
-          status: content.includes("Ignore") || content.includes("DAN") ? "blocked" : "clean",
-          risk_score: content.includes("Ignore") || content.includes("DAN") ? 0.98 : 0.01,
-          injection_detected: content.includes("Ignore") || content.includes("DAN"),
-          threats_neutralized: content.includes("Ignore") ? [{ type: "instruction_override", detail: "Ignore previous instructions", severity: 0.9 }] : [],
-          sanitized_content: content.replace(/ignore.*?instructions/gi, "[CANARY-REDACTED:instruction_override]"),
-          safety_receipt: "canary-v1-client-eval"
-        });
+        const badge = document.getElementById("statusBadge");
+        badge.textContent = "ERROR";
+        badge.className = "risk-badge risk-blocked";
+        document.getElementById("riskScoreVal").textContent = "—";
+        document.getElementById("outputText").textContent = "Error contacting CanaryGuard API: " + err.message;
+        document.getElementById("threatTags").innerHTML = '<span style="font-size: 0.75rem; color: #ef4444;">API request failed</span>';
       }
     }
 
     function renderResult(data) {
       const badge = document.getElementById("statusBadge");
       badge.textContent = data.status.toUpperCase();
-      badge.className = "risk-badge " + (data.status === "blocked" ? "risk-blocked" : data.status === "neutralized" ? "risk-neutralized" : "risk-clean");
+      badge.className = "risk-badge " + (data.status === "blocked" ? "risk-blocked" : data.status === "sanitized" ? "risk-neutralized" : "risk-clean");
 
       document.getElementById("riskScoreVal").textContent = Number(data.risk_score).toFixed(2);
-      document.getElementById("outputText").textContent = data.sanitized_content;
+      document.getElementById("outputText").textContent = data.sanitized_content || "(All content neutralized/redacted)";
       document.getElementById("receiptText").textContent = "Safety Receipt: " + (data.safety_receipt || "canary-v1-verified");
 
       const tags = document.getElementById("threatTags");
@@ -532,25 +519,23 @@ curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
         data.threats_neutralized.forEach(t => {
           const el = document.createElement("span");
           el.className = "threat-tag";
-          el.textContent = `${t.type}: ${t.detail.slice(0, 45)}`;
+          const label = typeof t === "string" ? t.replace(/_/g, " ") : (t.type || JSON.stringify(t));
+          el.textContent = label;
           tags.appendChild(el);
         });
       } else {
-        tags.innerHTML = '<span style="font-size: 0.75rem; color: #34d399;">✓ No malicious patterns or leaks found</span>';
+        tags.innerHTML = '<span style="font-size: 0.75rem; color: #34d399;">✓ No malicious patterns found</span>';
       }
     }
 
     function switchTab(name) {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-content").forEach(c => c.style.display = "none");
-      event.target.classList.add("active");
-      document.getElementById("tab-" + name).style.display = "block";
+      const btn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.getAttribute("onclick")?.includes(name));
+      if (btn) btn.classList.add("active");
+      const content = document.getElementById("tab-" + name);
+      if (content) content.style.display = "block";
     }
-
-    // Load initial stats
-    fetch("/stats").then(r => r.json()).then(s => {
-      if (s.total_settled_transactions) document.getElementById("settledCount").textContent = s.total_settled_transactions;
-    }).catch(() => {});
 
     // Initial preset
     loadPreset("dan");

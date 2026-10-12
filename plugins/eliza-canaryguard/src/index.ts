@@ -2,10 +2,17 @@ export interface CanaryGuardResult {
   status: "clean" | "sanitized" | "blocked";
   risk_score: number;
   injection_detected: boolean;
-  threats_neutralized: Array<{ type: string; detail: string; severity: number }>;
-  crypto_addresses: Array<{ address: string; chain: string; risk_score: number; reason: string }>;
+  threats_neutralized: string[];
+  crypto_addresses: Array<{ address: string; risk_score: number; reasons: string[] }>;
   sanitized_content: string;
   safety_receipt: string;
+  recommended_actions?: Array<{ service: string; description: string; url: string; price: string }>;
+  inspection: {
+    method: string;
+    guaranteed_safe: boolean;
+    risk_score_semantics: string;
+    limitations: string[];
+  };
 }
 
 export interface CanaryGuardPluginConfig {

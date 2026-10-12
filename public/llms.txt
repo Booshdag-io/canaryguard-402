@@ -30,7 +30,7 @@ Sanitizes untrusted text and blocks detected wallet-draining commands before con
 **Request Body:**
 ```json
 {
-  "content": "Untrusted text, HTML, or tool output to inspect (max 200,000 chars)",
+  "content": "Untrusted text, HTML, or tool output to inspect (1 to 50,000 characters)",
   "strict_mode": true
 }
 ```
@@ -38,18 +38,25 @@ Sanitizes untrusted text and blocks detected wallet-draining commands before con
 **Response (200 OK):**
 ```json
 {
-  "status": "clean" | "neutralized" | "blocked",
+  "status": "clean" | "sanitized" | "blocked",
   "risk_score": 0.01,
   "injection_detected": false,
   "threats_neutralized": [],
-  "crypto_addresses": [],
   "sanitized_content": "Safe content...",
-  "stats": {
-    "input_chars": 150,
-    "output_chars": 140,
-    "zero_width_removed": 0
-  },
-  "safety_receipt": "canary-v1-hash-hash"
+  "safety_receipt": "canary-v1-verified",
+  "crypto_addresses": [],
+  "recommended_actions": [],
+  "inspection": {
+    "method": "deterministic-rules",
+    "guaranteed_safe": false,
+    "risk_score_semantics": "heuristic severity, not a probability",
+    "limitations": [
+      "Does not detect every obfuscated, multilingual, or novel instruction attack.",
+      "Does not fetch external stylesheets, render browser layout, or analyze linked resources.",
+      "Address scores reflect text context and do not verify ownership, reputation, or contract safety.",
+      "Treat sanitized content as untrusted data; keep agent instructions and wallet authorization separate."
+    ]
+  }
 }
 ```
 

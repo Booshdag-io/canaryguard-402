@@ -4,25 +4,32 @@ export const CanaryGuardSanitizeInputSchema = z.object({
   content: z
     .string()
     .min(1)
-    .max(200_000)
-    .describe("Untrusted text, scraped HTML, email, or third-party tool output to sanitize before placing into agent context"),
+    .max(50_000)
+    .describe("Untrusted text, scraped HTML, email, or third-party tool output to sanitize before placing into agent context (max 50,000 characters)"),
   strictMode: z
     .boolean()
     .optional()
     .default(true)
-    .describe("When true, redacts high-risk crypto addresses and base64 blobs, and blocks wallet-draining commands"),
+    .describe("When true, blocks detected instruction overrides and wallet-draining commands"),
 });
 
 export type CanaryGuardSanitizeInput = z.infer<typeof CanaryGuardSanitizeInputSchema>;
 
 export interface CanaryGuardSanitizeOutput {
-  status: "clean" | "neutralized" | "blocked";
+  status: "clean" | "sanitized" | "blocked";
   riskScore: number;
   injectionDetected: boolean;
-  threatsNeutralized: Array<{ type: string; detail: string; severity: number }>;
-  cryptoAddresses: Array<{ address: string; chain: string; risk_score: number; reason: string }>;
+  threatsNeutralized: string[];
+  cryptoAddresses: Array<{ address: string; risk_score: number; reasons: string[] }>;
   sanitizedContent: string;
   safetyReceipt: string;
+  recommendedActions?: Array<{ service: string; description: string; url: string; price: string }>;
+  inspection: {
+    method: string;
+    guaranteed_safe: boolean;
+    risk_score_semantics: string;
+    limitations: string[];
+  };
 }
 
 /**
@@ -44,6 +51,7 @@ export async function executeCanaryGuardSanitize(
   };
 
   if (options?.paymentHeader) {
+    headers["PAYMENT-SIGNATURE"] = options.paymentHeader;
     headers["X-PAYMENT"] = options.paymentHeader;
   }
 
@@ -70,5 +78,7 @@ export async function executeCanaryGuardSanitize(
     cryptoAddresses: data.crypto_addresses || [],
     sanitizedContent: data.sanitized_content,
     safetyReceipt: data.safety_receipt,
+    recommendedActions: data.recommended_actions,
+    inspection: data.inspection,
   };
 }
