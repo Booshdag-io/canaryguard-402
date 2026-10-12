@@ -1,8 +1,62 @@
 # CanaryGuard 402
 
-Deterministic inspection and text scrubbing for untrusted agent inputs. `POST /v1/sanitize` costs **0.003 USDC** on Base mainnet through the Coinbase CDP x402 facilitator. A remote MCP tool exposes the same inspection with payment per tool call.
+[![Base Mainnet](https://img.shields.io/badge/Network-Base%20Mainnet%20(8453)-blue)](https://base.org)
+[![x402 Protocol](https://img.shields.io/badge/Protocol-x402%20v2-green)](https://x402.org)
+[![Coinbase CDP Bazaar](https://img.shields.io/badge/CDP%20Bazaar-Active%20%26%20Indexed-purple)](https://docs.cdp.coinbase.com/x402)
+[![ElizaOS Plugin](https://img.shields.io/npm/v/@kurox_real/plugin-canaryguard?label=ElizaOS%20Plugin&color=orange)](https://www.npmjs.com/package/@kurox_real/plugin-canaryguard)
+[![AgentKit Plugin](https://img.shields.io/npm/v/@kurox_real/agentkit-canaryguard-402?label=AgentKit%20Action&color=crimson)](https://www.npmjs.com/package/@kurox_real/agentkit-canaryguard-402)
+[![Client SDK](https://img.shields.io/npm/v/@kurox_real/canaryguard-client?label=TS%20SDK&color=teal)](https://www.npmjs.com/package/@kurox_real/canaryguard-client)
 
-CanaryGuard removes detected instructions, concealed Unicode, HTML markup and selected hidden elements. Its rules have incomplete coverage. Treat its output as untrusted data; retain separate wallet authorization and agent instruction boundaries. `risk_score` is a heuristic severity score, not a probability. `safety_receipt: "canary-v1-verified"` records processing by this implementation; it is not a cryptographic attestation or guarantee of safety.
+Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI agents. `POST /v1/sanitize` costs **0.003 USDC** on Base mainnet through the Coinbase CDP x402 facilitator. A remote MCP tool exposes the same inspection with payment per tool call.
+
+- 🌐 **Live Web Playground**: [canaryguard-402.onrender.com](https://canaryguard-402.onrender.com)
+- 🤖 **Agent Discovery**: [canaryguard-402.onrender.com/llms.txt](https://canaryguard-402.onrender.com/llms.txt)
+- 📦 **NPM Packages**:
+  - `@kurox_real/plugin-canaryguard` — Official ElizaOS Plugin
+  - `@kurox_real/agentkit-canaryguard-402` — Coinbase AgentKit Action Provider
+  - `@kurox_real/canaryguard-client` — TypeScript SDK with automatic x402 payment handling
+
+---
+
+## Agent Quickstarts
+
+### 1. ElizaOS Agents (ai16z)
+```bash
+npm install @kurox_real/plugin-canaryguard
+```
+```typescript
+import { canaryGuardPlugin } from "@kurox_real/plugin-canaryguard";
+
+export const character = {
+  name: "AutonomousAgent",
+  plugins: [canaryGuardPlugin],
+};
+```
+
+### 2. Coinbase AgentKit
+```bash
+npm install @kurox_real/agentkit-canaryguard-402
+```
+```typescript
+import { canaryGuardActionProvider } from "@kurox_real/agentkit-canaryguard-402";
+
+const agent = await createAgent({
+  actionProviders: [canaryGuardActionProvider()],
+});
+```
+
+### 3. TypeScript Client
+```bash
+npm install @kurox_real/canaryguard-client
+```
+```typescript
+import { CanaryGuardClient } from "@kurox_real/canaryguard-client";
+
+const client = new CanaryGuardClient();
+const result = await client.sanitize("Untrusted scraped text or user prompt", { strictMode: true });
+```
+
+---
 
 ## Configuration
 

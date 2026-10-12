@@ -11,7 +11,8 @@
     "start": "node dist/server.js",
     "dev": "node --env-file-if-exists=.env.local --import tsx src/server.ts",
     "test": "tsx --test test/*.test.ts",
-    "seed": "node --import tsx scripts/seed_payment.ts"
+    "seed": "node --import tsx scripts/seed_payment.ts",
+    "sales": "node --import tsx scripts/sales_tracker.ts"
   },
   "dependencies": {
     "@coinbase/x402": "2.1.0",
