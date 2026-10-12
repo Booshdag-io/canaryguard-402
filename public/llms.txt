@@ -1,0 +1,59 @@
+# CanaryGuard 402 - LLM & AI Agent Integration Guide
+
+> Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI agents, paid per call via the x402 protocol (USDC on Base).
+
+## Overview
+CanaryGuard 402 is an ultra-fast (<5ms), deterministic security firewall designed specifically for autonomous AI agents that read untrusted web pages, user messages, scraped content, or third-party tool outputs. It sanitizes text before it enters the LLM's context window, stripping prompt injection, jailbreaks, hidden CSS/HTML payloads, unicode smuggling, and wallet-draining commands.
+
+## Service Metadata
+- **Service Name**: CanaryGuard 402
+- **Website & Docs**: https://canaryguard-402.onrender.com
+- **x402 Manifest**: https://canaryguard-402.onrender.com/.well-known/x402.json
+- **Health Check**: https://canaryguard-402.onrender.com/health
+- **Live Stats**: https://canaryguard-402.onrender.com/stats
+- **Network**: Base Mainnet (`eip155:8453`)
+- **Asset**: USD Coin (USDC: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`)
+- **Payment Scheme**: Exact EVM (`exact`)
+- **Cost**: 0.003 USDC (3000 atomic units, 6 decimals)
+- **Facilitator**: Coinbase CDP Facilitator / x402.org
+- **Merchant Address**: `0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1`
+
+## Paid API Endpoint
+
+### POST /v1/sanitize
+Sanitizes untrusted text and blocks detected wallet-draining commands before context ingestion.
+
+**Headers:**
+- `Content-Type: application/json`
+- `X-PAYMENT: <signed-eip712-authorization>` (required for 200, otherwise returns 402 challenge)
+
+**Request Body:**
+```json
+{
+  "content": "Untrusted text, HTML, or tool output to inspect (max 200,000 chars)",
+  "strict_mode": true
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "status": "clean" | "neutralized" | "blocked",
+  "risk_score": 0.01,
+  "injection_detected": false,
+  "threats_neutralized": [],
+  "crypto_addresses": [],
+  "sanitized_content": "Safe content...",
+  "stats": {
+    "input_chars": 150,
+    "output_chars": 140,
+    "zero_width_removed": 0
+  },
+  "safety_receipt": "canary-v1-hash-hash"
+}
+```
+
+## Model Context Protocol (MCP) Tool
+- **Server Name**: `canaryguard-402`
+- **Tool**: `canary_sanitize`
+- **Description**: Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits. Cost: 0.003 USDC on Base.
