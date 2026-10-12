@@ -50,7 +50,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
       paid_endpoint: `POST ${payments.config.publicUrl}/v1/sanitize`,
     });
   });
-  app.post('/v1/demo-sanitize', (req, res) => {
+  app.post('/v1/demo-sanitize', express.json({ limit: '64kb' }), (req, res) => {
     const input = Input.safeParse(req.body);
     if (!input.success) return res.status(400).json({ error: 'invalid_input' });
     res.json(sanitizeContent(input.data.content.slice(0, 10000), input.data.strict_mode));
