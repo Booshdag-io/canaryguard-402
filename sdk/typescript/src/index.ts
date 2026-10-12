@@ -28,13 +28,12 @@ export interface ExtractedAddress {
 }
 
 export interface SanitizeResponse {
-  status: "clean" | "neutralized" | "blocked";
+  status: "clean" | "neutralized" | "blocked" | "sanitized";
   risk_score: number;
   injection_detected: boolean;
-  threats_neutralized: Threat[];
+  threats_neutralized: Threat[] | string[];
   crypto_addresses: ExtractedAddress[];
   sanitized_content: string;
-  stats: { input_chars: number; output_chars: number; zero_width_removed: number };
   safety_receipt: string;
 }
 
@@ -77,7 +76,7 @@ export class CanaryGuardClient {
     return (await res.json()) as SanitizeResponse;
   }
 
-  async health(): Promise<{ status: string; service: string; version: string }> {
+  async health(): Promise<{ status: string; service: string }> {
     const res = await fetch(`${this.baseUrl}/health`);
     return await res.json();
   }
