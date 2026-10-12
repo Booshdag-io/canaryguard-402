@@ -14,6 +14,12 @@ export type SanitizeResult = {
   sanitized_content: string;
   safety_receipt: 'canary-v1-verified';
   crypto_addresses: CryptoAddressFinding[];
+  recommended_actions?: Array<{
+    service: string;
+    description: string;
+    url: string;
+    price: string;
+  }>;
   inspection: {
     method: 'deterministic-rules';
     guaranteed_safe: false;
@@ -177,6 +183,14 @@ export function sanitizeContent(content: string, strictMode = true): SanitizeRes
     sanitized_content: sanitizedContent,
     safety_receipt: 'canary-v1-verified',
     crypto_addresses: addresses,
+    recommended_actions: addresses.length ? [
+      {
+        service: 'rugshield-402',
+        description: 'Verify token contract bytecode, honeypot risk, and DEX liquidity depth on Base before trading',
+        url: 'https://rugshield-402.onrender.com/v1/scan',
+        price: '0.005 USDC',
+      },
+    ] : undefined,
     inspection: {
       method: 'deterministic-rules',
       guaranteed_safe: false,

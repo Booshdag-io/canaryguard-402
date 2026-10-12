@@ -78,9 +78,31 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   });
   app.use(receiptRetries());
   app.use((req, res, next) => payments.gate(req, res, next).catch(() => { if (!res.headersSent) res.status(503).json({ error: 'payment_service_unavailable' }); }));
-  app.post('/v1/sanitize', (req, res) => { const input = Input.safeParse(req.body);
+  app.post('/v1/sanitize', (req, res) => {
+    const input = Input.safeParse(req.body);
     if (!input.success) { res.status(400).json({ error: 'invalid_input', max_content_characters: 50000 }); return; }
-    res.json(sanitizeContent(input.data.content, input.data.strict_mode)); });
+    res.on('finish', () => {
+      const payHeader = res.getHeader('PAYMENT-RESPONSE') || res.getHeader('X-PAYMENT-RESPONSE');
+      if (payHeader && typeof payHeader === 'string') {
+        try {
+          const parsed = JSON.parse(Buffer.from(payHeader, 'base64').toString('utf8'));
+          const tx = parsed.transaction || parsed.txHash;
+          console.log(`[canaryguard] 💰 0.003 USDC SETTLED! Payer: ${parsed.payer || 'client'} | Tx: https://basescan.org/tx/${tx}`);
+          const hook = process.env.REVENUE_WEBHOOK_URL;
+          if (hook) {
+            fetch(hook, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                content: `💰 **CanaryGuard 402 Settlement**\nAmount: **0.003 USDC**\nPayer: \`${parsed.payer || 'unknown'}\`\nTx: https://basescan.org/tx/${tx}`,
+              }),
+            }).catch(() => {});
+          }
+        } catch {}
+      }
+    });
+    res.json(sanitizeContent(input.data.content, input.data.strict_mode));
+  });
   app.get('/v1/sanitize', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'use_post' }));
   app.post('/mcp', await mcpHandler(payments.server, payments.config.publicUrl, payments.config.payTo));
   app.all('/mcp', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'method_not_allowed' }));
