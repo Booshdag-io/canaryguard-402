@@ -9,6 +9,7 @@ import { ASSET, DESCRIPTION, Input, inputJsonSchema, NETWORK, SERVICE_VERSION } 
 import { sanitizeContent } from './sanitize.js';
 import { receiptRetries } from './retries.js';
 import { mcpHandler } from './mcp.js';
+import { sendRevenueAlert } from './alerts.js';
 
 export async function createApp(payments: Awaited<ReturnType<typeof createPayments>>) {
   const app = express(); app.disable('x-powered-by'); app.set('case sensitive routing', true); app.set('strict routing', true);
@@ -149,17 +150,9 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
         try {
           const parsed = JSON.parse(Buffer.from(payHeader, 'base64').toString('utf8'));
           const tx = parsed.transaction || parsed.txHash;
-          console.log(`[canaryguard] 💰 0.003 USDC SETTLED! Payer: ${parsed.payer || 'client'} | Tx: https://basescan.org/tx/${tx}`);
-          const hook = process.env.REVENUE_WEBHOOK_URL;
-          if (hook) {
-            fetch(hook, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                content: `💰 **CanaryGuard 402 Settlement**\nAmount: **0.003 USDC**\nPayer: \`${parsed.payer || 'unknown'}\`\nTx: https://basescan.org/tx/${tx}`,
-              }),
-            }).catch(() => {});
-          }
+          const payer = parsed.payer || 'client';
+          console.log(`[canaryguard] 💰 0.003 USDC SETTLED! Payer: ${payer} | Tx: https://basescan.org/tx/${tx}`);
+          sendRevenueAlert(payer, tx);
         } catch {}
       }
     });

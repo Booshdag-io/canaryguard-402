@@ -7,6 +7,7 @@ import type { x402ResourceServer } from '@x402/core/server';
 import { Input, inputJsonSchema, paymentOption, SERVICE_VERSION, TOOL_DESCRIPTION } from './config.js';
 import { sanitizeContent } from './sanitize.js';
 import { fingerprint } from './retries.js';
+import { sendRevenueAlert } from './alerts.js';
 
 export async function mcpHandler(resourceServer: x402ResourceServer, publicUrl: string, payTo: string) {
   const accepts = await resourceServer.buildPaymentRequirements(paymentOption(payTo));
@@ -40,8 +41,19 @@ export async function mcpHandler(resourceServer: x402ResourceServer, publicUrl: 
       const result = Promise.resolve(wrapped(args, extra));
       const row = { argsHash, result, expires: Date.now() + 600000, pending: true };
       cache.set(key, row);
-      result.then(value => { row.pending = false; row.expires = Date.now() + 600000;
-        if (!value._meta?.['x402/payment-response']) cache.delete(key); }, () => cache.delete(key));
+      result.then(value => {
+        row.pending = false;
+        row.expires = Date.now() + 600000;
+        const resp = value._meta?.['x402/payment-response'] as { transaction?: string; txHash?: string; payer?: string } | undefined;
+        if (resp) {
+          const tx = resp.transaction || resp.txHash;
+          const payer = resp.payer || 'mcp-client';
+          console.log(`[canaryguard] 💰 MCP 0.003 USDC SETTLED! Payer: ${payer} | Tx: https://basescan.org/tx/${tx}`);
+          sendRevenueAlert(payer, tx);
+        } else {
+          cache.delete(key);
+        }
+      }, () => cache.delete(key));
       return result;
     });
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
