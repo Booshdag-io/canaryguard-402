@@ -25,7 +25,14 @@ Sanitizes untrusted text and blocks detected wallet-draining commands before con
 
 **Headers:**
 - `Content-Type: application/json`
-- `X-PAYMENT: <signed-eip712-authorization>` (required for 200, otherwise returns 402 challenge)
+- `PAYMENT-SIGNATURE: <signed-eip712-authorization>` (canonical x402 v2 payment header; required for 200)
+- `X-PAYMENT: <signed-eip712-authorization>` (backward-compatible legacy alias; accepted interchangeably)
+
+**Quick Inspection (0-Payment Probe):**
+```bash
+curl -i https://canaryguard-402.onrender.com/v1/sanitize
+```
+Returns `402 Payment Required` with both `PAYMENT-REQUIRED` (v2 RFC) challenge and legacy parameter headers (`X-402-Payment-To`, `X-402-Amount`, `X-402-Asset`, `X-402-Network`, `X-402-Chain-Id`).
 
 **Request Body:**
 ```json

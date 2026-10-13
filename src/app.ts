@@ -16,8 +16,24 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors({ origin: '*', methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept', 'X-PAYMENT', 'PAYMENT-SIGNATURE', 'MCP-Protocol-Version', 'Mcp-Session-Id'],
-    exposedHeaders: ['WWW-Authenticate', 'X-PAYMENT', 'PAYMENT-SIGNATURE', 'X-402-Version', 'Location', 'PAYMENT-REQUIRED', 'PAYMENT-RESPONSE', 'EXTENSION-RESPONSES', 'Idempotency-Replayed'] }));
-  app.use((_req, res, next) => { res.set('Cache-Control', 'no-store').set('X-402-Version', '2'); next(); });
+    exposedHeaders: ['WWW-Authenticate', 'X-PAYMENT', 'PAYMENT-SIGNATURE', 'X-402-Version', 'Location', 'PAYMENT-REQUIRED', 'PAYMENT-RESPONSE', 'EXTENSION-RESPONSES', 'Idempotency-Replayed',
+      'X-402-Payment-To', 'X-402-Amount', 'X-402-Amount-Units', 'X-402-Asset', 'X-402-Network', 'X-402-Chain-Id'] }));
+  app.use((_req, res, next) => {
+    res.set('Cache-Control', 'no-store').set('X-402-Version', '2');
+    const origWriteHead = res.writeHead.bind(res);
+    res.writeHead = function (statusCode: number, ...args: any[]) {
+      if (statusCode === 402 || res.statusCode === 402) {
+        res.setHeader('X-402-Payment-To', payments.config.payTo);
+        res.setHeader('X-402-Amount', '0.003');
+        res.setHeader('X-402-Amount-Units', '3000');
+        res.setHeader('X-402-Asset', ASSET);
+        res.setHeader('X-402-Network', 'base');
+        res.setHeader('X-402-Chain-Id', '8453');
+      }
+      return (origWriteHead as any)(statusCode, ...args);
+    } as any;
+    next();
+  });
   app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'canaryguard-402' }));
   app.get('/stats', (_req, res) => res.json({
     service: 'canaryguard-402',
@@ -58,7 +74,11 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   const x402Manifest = {
     name: 'CanaryGuard 402',
     description: DESCRIPTION,
+    version: SERVICE_VERSION,
     x402Version: 2,
+    facilitator: 'https://api.cdp.coinbase.com/platform/mobile/x402',
+    payment_recipient: payments.config.payTo,
+    accepted_tokens: [ASSET],
     pricing: { amount: '3000', price: '0.003 USDC', asset: ASSET, network: NETWORK, chainId: 8453, payTo: payments.config.payTo },
     endpoints: [{ method: 'POST', url: payments.config.publicUrl + '/v1/sanitize', inputSchema: inputJsonSchema, extensions: payments.discovery }],
     mcp: { url: payments.config.publicUrl + '/mcp', tool: 'canary_sanitize', transport: 'streamable-http' },

@@ -93,6 +93,12 @@ test('unpaid HTTP requests advertise exact Base USDC terms without returning ins
   const response = await h.post(ATTACK);
   assert.equal(response.status, 402);
   assertBaseChallenge(decodePaymentRequiredHeader(response.headers.get('PAYMENT-REQUIRED')!));
+  assert.equal(response.headers.get('X-402-Payment-To'), RECIPIENT);
+  assert.equal(response.headers.get('X-402-Amount'), '0.003');
+  assert.equal(response.headers.get('X-402-Amount-Units'), '3000');
+  assert.equal(response.headers.get('X-402-Asset'), ASSET);
+  assert.equal(response.headers.get('X-402-Network'), 'base');
+  assert.equal(response.headers.get('X-402-Chain-Id'), '8453');
   const body = await response.json();
   assert.equal(body.error, 'payment_required');
   assert.equal('sanitized_content' in body, false);
@@ -100,6 +106,12 @@ test('unpaid HTTP requests advertise exact Base USDC terms without returning ins
   const smoke = await h.send('/v1/sanitize');
   assert.equal(smoke.status, 402);
   assertBaseChallenge(decodePaymentRequiredHeader(smoke.headers.get('PAYMENT-REQUIRED')!));
+  assert.equal(smoke.headers.get('X-402-Payment-To'), RECIPIENT);
+  assert.equal(smoke.headers.get('X-402-Amount'), '0.003');
+  assert.equal(smoke.headers.get('X-402-Amount-Units'), '3000');
+  assert.equal(smoke.headers.get('X-402-Asset'), ASSET);
+  assert.equal(smoke.headers.get('X-402-Network'), 'base');
+  assert.equal(smoke.headers.get('X-402-Chain-Id'), '8453');
   await smoke.arrayBuffer();
 });
 
@@ -118,11 +130,18 @@ test('health, manifest, and required cross-origin transport headers remain publi
   assert.deepEqual(await health.json(), { status: 'ok', service: 'canaryguard-402' });
   assert.equal(health.headers.get('Access-Control-Allow-Origin'), '*');
   const exposed = health.headers.get('Access-Control-Expose-Headers')!.toLowerCase().split(',').map(value => value.trim());
-  for (const header of ['www-authenticate', 'x-payment', 'payment-signature', 'x-402-version', 'location', 'payment-required', 'payment-response']) assert.ok(exposed.includes(header), header);
+  for (const header of [
+    'www-authenticate', 'x-payment', 'payment-signature', 'x-402-version', 'location', 'payment-required', 'payment-response',
+    'x-402-payment-to', 'x-402-amount', 'x-402-amount-units', 'x-402-asset', 'x-402-network', 'x-402-chain-id',
+  ]) assert.ok(exposed.includes(header), header);
   const manifest = await h.send('/.well-known/x402.json');
   const body = await manifest.json();
   assert.equal(manifest.status, 200);
   assert.equal(body.name, 'CanaryGuard 402');
+  assert.equal(body.version, '1.0.1');
+  assert.equal(body.facilitator, 'https://api.cdp.coinbase.com/platform/mobile/x402');
+  assert.equal(body.payment_recipient, RECIPIENT);
+  assert.deepEqual(body.accepted_tokens, [ASSET]);
   assert.equal(body.pricing.amount, '3000');
   assert.equal(body.pricing.chainId, 8453);
   assert.equal(body.mcp.tool, 'canary_sanitize');
@@ -131,6 +150,8 @@ test('health, manifest, and required cross-origin transport headers remain publi
   assert.equal(manifestAlias.status, 200);
   const aliasBody = await manifestAlias.json();
   assert.equal(aliasBody.name, 'CanaryGuard 402');
+  assert.equal(aliasBody.version, '1.0.1');
+  assert.equal(aliasBody.payment_recipient, RECIPIENT);
 
   const openapi = await h.send('/openapi.json');
   assert.equal(openapi.status, 200);
