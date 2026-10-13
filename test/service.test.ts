@@ -126,6 +126,19 @@ test('health, manifest, and required cross-origin transport headers remain publi
   assert.equal(body.pricing.amount, '3000');
   assert.equal(body.pricing.chainId, 8453);
   assert.equal(body.mcp.tool, 'canary_sanitize');
+
+  const manifestAlias = await h.send('/.well-known/x402');
+  assert.equal(manifestAlias.status, 200);
+  const aliasBody = await manifestAlias.json();
+  assert.equal(aliasBody.name, 'CanaryGuard 402');
+
+  const openapi = await h.send('/openapi.json');
+  assert.equal(openapi.status, 200);
+  const openapiBody = await openapi.json();
+  assert.equal(openapiBody.openapi, '3.0.3');
+  assert.equal(openapiBody.info.title, 'CanaryGuard 402');
+  assert.ok(openapiBody.paths['/v1/sanitize']);
+
   assert.deepEqual(h.calls, { verify: [], settle: [] });
 });
 

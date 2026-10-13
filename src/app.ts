@@ -55,17 +55,59 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     if (!input.success) return res.status(400).json({ error: 'invalid_input' });
     res.json(sanitizeContent(input.data.content.slice(0, 10000), input.data.strict_mode));
   });
-  app.get('/.well-known/x402.json', (_req, res) => res.json({ name: 'CanaryGuard 402', description: DESCRIPTION, x402Version: 2,
+  const x402Manifest = {
+    name: 'CanaryGuard 402',
+    description: DESCRIPTION,
+    x402Version: 2,
     pricing: { amount: '3000', price: '0.003 USDC', asset: ASSET, network: NETWORK, chainId: 8453, payTo: payments.config.payTo },
     endpoints: [{ method: 'POST', url: payments.config.publicUrl + '/v1/sanitize', inputSchema: inputJsonSchema, extensions: payments.discovery }],
     mcp: { url: payments.config.publicUrl + '/mcp', tool: 'canary_sanitize', transport: 'streamable-http' },
     limits: { content_characters: 50000, body_bytes: 262144, idempotency: 'volatile, single instance, 10 minutes' },
-    disclaimer: 'Rule-based inspection has incomplete coverage. The receipt is a processing marker, not a safety guarantee.' }));
+    disclaimer: 'Rule-based inspection has incomplete coverage. The receipt is a processing marker, not a safety guarantee.',
+  };
+  app.get(['/.well-known/x402', '/.well-known/x402.json'], (_req, res) => res.json(x402Manifest));
+  app.get(['/openapi.json', '/.well-known/openapi.json'], (_req, res) => res.json({
+    openapi: '3.0.3',
+    info: {
+      title: 'CanaryGuard 402',
+      version: SERVICE_VERSION,
+      description: DESCRIPTION,
+    },
+    servers: [{ url: payments.config.publicUrl }],
+    paths: {
+      '/v1/sanitize': {
+        post: {
+          summary: 'Deterministic prompt-injection firewall and wallet drain guard',
+          description: 'Sanitizes untrusted text and checks for prompt injection attacks and wallet drain destinations. Requires 0.003 USDC micropayment on Base.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: inputJsonSchema,
+              },
+            },
+          },
+          responses: {
+            '200': {
+              description: 'Text inspected and sanitized successfully',
+            },
+            '402': {
+              description: 'Payment Required: 0.003 USDC on Base mainnet (EIP-155:8453)',
+            },
+          },
+          'x-payment-required': true,
+          'x-price': '0.003',
+          'x-currency': 'USDC',
+          'x-network': 'base',
+        },
+      },
+    },
+  }));
   app.get('/.well-known/mcp/server-card.json', (_req, res) => res.json({ serverInfo: { name: 'canaryguard-402', version: SERVICE_VERSION },
     description: DESCRIPTION, transport: { type: 'streamable-http', url: payments.config.publicUrl + '/mcp' },
     capabilities: { tools: {} }, tools: [{ name: 'canary_sanitize', description: DESCRIPTION, inputSchema: inputJsonSchema }] }));
   app.use(rateLimit({ windowMs: 60000, limit: 120, standardHeaders: 'draft-8', legacyHeaders: false,
-    message: { error: 'rate_limit_exceeded' }, skip: req => req.path === '/health' }));
+    message: { error: 'rate_limit_exceeded' }, skip: req => req.path === '/health' || req.path === '/openapi.json' || req.path.startsWith('/.well-known') }));
   app.use(express.json({ limit: '256kb', strict: true }));
   // HEAD must not fall through Express's automatic GET handler.
   app.use((req, res, next) => {
