@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import path from 'node:path';
 import fs from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { rateLimit } from 'express-rate-limit';
 import type { createPayments } from './payments.js';
 import { ASSET, DESCRIPTION, Input, inputJsonSchema, NETWORK, SERVICE_VERSION } from './config.js';
@@ -18,7 +19,44 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   app.use(cors({ origin: '*', methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept', 'X-PAYMENT', 'PAYMENT-SIGNATURE', 'MCP-Protocol-Version', 'Mcp-Session-Id'],
     exposedHeaders: ['WWW-Authenticate', 'X-PAYMENT', 'PAYMENT-SIGNATURE', 'X-402-Version', 'Location', 'PAYMENT-REQUIRED', 'PAYMENT-RESPONSE', 'EXTENSION-RESPONSES', 'Idempotency-Replayed',
-      'X-402-Payment-To', 'X-402-Amount', 'X-402-Amount-Units', 'X-402-Asset', 'X-402-Network', 'X-402-Chain-Id'] }));
+      'X-402-Payment-To', 'X-402-Amount', 'X-402-Amount-Units', 'X-402-Asset', 'X-402-Network', 'X-402-Chain-Id', 'X-Request-Id'] }));
+  app.use((req, res, next) => {
+    const start = Date.now();
+    const reqId = randomUUID().slice(0, 8);
+    res.setHeader('X-Request-Id', reqId);
+    res.on('finish', () => {
+      if (req.path === '/health') return;
+      const payHeader = res.getHeader('PAYMENT-RESPONSE') || res.getHeader('X-PAYMENT-RESPONSE');
+      let settled = false;
+      let payer: string | null = null;
+      let tx: string | null = null;
+      if (typeof payHeader === 'string') {
+        try {
+          const parsed = JSON.parse(Buffer.from(payHeader, 'base64').toString('utf8'));
+          if (parsed.success === true) {
+            settled = true;
+            payer = parsed.payer || null;
+            tx = parsed.transaction || parsed.txHash || null;
+          }
+        } catch {}
+      }
+      const isReplayed = res.getHeader('Idempotency-Replayed') === 'true';
+      const sanitized = res.locals.sanitized === true && !isReplayed && res.statusCode === 200;
+      console.log(JSON.stringify({
+        ts: new Date().toISOString(),
+        reqId,
+        endpoint: `${req.method} ${req.path}`,
+        status: res.statusCode,
+        durationMs: Date.now() - start,
+        settled,
+        replayed: isReplayed,
+        sanitized,
+        payer,
+        tx,
+      }));
+    });
+    next();
+  });
   app.use((_req, res, next) => {
     res.set('Cache-Control', 'no-store').set('X-402-Version', '2');
     const origWriteHead = res.writeHead.bind(res);
@@ -145,17 +183,22 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     const input = Input.safeParse(req.body);
     if (!input.success) { res.status(400).json({ error: 'invalid_input', max_content_characters: 50000 }); return; }
     res.on('finish', () => {
+      if (res.getHeader('Idempotency-Replayed')) return;
+      if (res.statusCode !== 200) return;
       const payHeader = res.getHeader('PAYMENT-RESPONSE') || res.getHeader('X-PAYMENT-RESPONSE');
       if (payHeader && typeof payHeader === 'string') {
         try {
           const parsed = JSON.parse(Buffer.from(payHeader, 'base64').toString('utf8'));
-          const tx = parsed.transaction || parsed.txHash;
-          const payer = parsed.payer || 'client';
-          console.log(`[canaryguard] 💰 0.003 USDC SETTLED! Payer: ${payer} | Tx: https://basescan.org/tx/${tx}`);
-          sendRevenueAlert(payer, tx);
+          if (parsed.success === true && (parsed.transaction || parsed.txHash)) {
+            const tx = parsed.transaction || parsed.txHash;
+            const payer = parsed.payer || 'client';
+            console.log(`[canaryguard] 💰 0.003 USDC SETTLED! Payer: ${payer} | Tx: https://basescan.org/tx/${tx}`);
+            sendRevenueAlert(payer, tx);
+          }
         } catch {}
       }
     });
+    res.locals.sanitized = true;
     res.json(sanitizeContent(input.data.content, input.data.strict_mode));
   });
   app.get('/v1/sanitize', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'use_post' }));

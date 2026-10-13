@@ -44,9 +44,9 @@ export async function mcpHandler(resourceServer: x402ResourceServer, publicUrl: 
       result.then(value => {
         row.pending = false;
         row.expires = Date.now() + 600000;
-        const resp = value._meta?.['x402/payment-response'] as { transaction?: string; txHash?: string; payer?: string } | undefined;
-        if (resp) {
-          const tx = resp.transaction || resp.txHash;
+        const resp = value._meta?.['x402/payment-response'] as { transaction?: string; txHash?: string; payer?: string; success?: boolean } | undefined;
+        const tx = resp?.transaction || resp?.txHash;
+        if (resp && resp.success === true && Boolean(tx)) {
           const payer = resp.payer || 'mcp-client';
           console.log(`[canaryguard] 💰 MCP 0.003 USDC SETTLED! Payer: ${payer} | Tx: https://basescan.org/tx/${tx}`);
           sendRevenueAlert(payer, tx);

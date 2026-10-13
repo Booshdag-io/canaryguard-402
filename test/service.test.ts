@@ -132,7 +132,7 @@ test('health, manifest, and required cross-origin transport headers remain publi
   const exposed = health.headers.get('Access-Control-Expose-Headers')!.toLowerCase().split(',').map(value => value.trim());
   for (const header of [
     'www-authenticate', 'x-payment', 'payment-signature', 'x-402-version', 'location', 'payment-required', 'payment-response',
-    'x-402-payment-to', 'x-402-amount', 'x-402-amount-units', 'x-402-asset', 'x-402-network', 'x-402-chain-id',
+    'x-402-payment-to', 'x-402-amount', 'x-402-amount-units', 'x-402-asset', 'x-402-network', 'x-402-chain-id', 'x-request-id',
   ]) assert.ok(exposed.includes(header), header);
   const manifest = await h.send('/.well-known/x402.json');
   const body = await manifest.json();
