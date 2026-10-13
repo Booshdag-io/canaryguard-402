@@ -5,3 +5,5 @@ dist/
 *.pem
 *.log
 seed-result.json
+mcp-publisher.exe
+*.exe

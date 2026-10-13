@@ -11,6 +11,96 @@ export const Input = z.strictObject({ content: z.string().min(1).max(50000), str
 export const inputJsonSchema = { type: 'object', additionalProperties: false,
   properties: { content: { type: 'string', minLength: 1, maxLength: 50000 }, strict_mode: { type: 'boolean', default: true } }, required: ['content'] };
 
+export const sanitizeResultJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    status: {
+      type: 'string',
+      enum: ['clean', 'sanitized', 'blocked'],
+      description: 'Heuristic classification of the input content',
+    },
+    risk_score: {
+      type: 'number',
+      minimum: 0,
+      maximum: 1,
+      description: 'Heuristic risk severity between 0.0 and 1.0',
+    },
+    injection_detected: {
+      type: 'boolean',
+      description: 'Whether prompt injection or malicious instructions were detected',
+    },
+    threats_neutralized: {
+      type: 'array',
+      items: { type: 'string' },
+      description: 'List of heuristic threat categories identified and neutralized',
+    },
+    sanitized_content: {
+      type: 'string',
+      description: 'Processed text with harmful instructions stripped or blocked',
+    },
+    safety_receipt: {
+      type: 'string',
+      enum: ['canary-v1-verified'],
+      description: 'Deterministic processing receipt marker',
+    },
+    crypto_addresses: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          address: { type: 'string', description: 'EVM or crypto address detected' },
+          risk_score: { type: 'number', description: 'Address contextual risk score' },
+          reasons: { type: 'array', items: { type: 'string' }, description: 'Contextual reasons for scoring' },
+        },
+        required: ['address', 'risk_score', 'reasons'],
+      },
+      description: 'Crypto wallet addresses detected in the text with heuristic risk scoring',
+    },
+    recommended_actions: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          service: { type: 'string' },
+          description: { type: 'string' },
+          url: { type: 'string' },
+          price: { type: 'string' },
+        },
+        required: ['service', 'description', 'url', 'price'],
+      },
+      description: 'Optional downstream verification services',
+    },
+    inspection: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        method: { type: 'string', enum: ['deterministic-rules'] },
+        guaranteed_safe: { type: 'boolean', enum: [false] },
+        risk_score_semantics: { type: 'string' },
+        limitations: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+      required: ['method', 'guaranteed_safe', 'risk_score_semantics', 'limitations'],
+      description: 'Inspection methodology and safety disclaimer',
+    },
+  },
+  required: [
+    'status',
+    'risk_score',
+    'injection_detected',
+    'threats_neutralized',
+    'sanitized_content',
+    'safety_receipt',
+    'crypto_addresses',
+    'inspection',
+  ],
+};
+
 export function configuration(env = process.env) {
   const publicUrl = env.PUBLIC_URL || 'https://canaryguard-402.onrender.com';
   const parsed = new URL(publicUrl);

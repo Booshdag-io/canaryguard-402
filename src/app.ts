@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { rateLimit } from 'express-rate-limit';
 import type { createPayments } from './payments.js';
-import { ASSET, DESCRIPTION, Input, inputJsonSchema, NETWORK, SERVICE_VERSION } from './config.js';
+import { ASSET, DESCRIPTION, Input, inputJsonSchema, NETWORK, sanitizeResultJsonSchema, SERVICE_VERSION } from './config.js';
 import { sanitizeContent } from './sanitize.js';
 import { receiptRetries } from './retries.js';
 import { mcpHandler } from './mcp.js';
@@ -132,10 +132,16 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
       version: SERVICE_VERSION,
       description: DESCRIPTION,
     },
+    tags: [
+      { name: 'AI Security', description: 'Prompt-injection detection and sanitization' },
+      { name: 'Safety', description: 'Deterministic heuristic content filtering' },
+    ],
     servers: [{ url: payments.config.publicUrl }],
     paths: {
       '/v1/sanitize': {
         post: {
+          tags: ['AI Security', 'Safety'],
+          operationId: 'sanitizeContent',
           summary: 'Deterministic prompt-injection firewall and wallet drain guard',
           description: 'Sanitizes untrusted text and checks for prompt injection attacks and wallet drain destinations. Requires 0.003 USDC micropayment on Base.',
           requestBody: {
@@ -149,6 +155,11 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
           responses: {
             '200': {
               description: 'Text inspected and sanitized successfully',
+              content: {
+                'application/json': {
+                  schema: sanitizeResultJsonSchema,
+                },
+              },
             },
             '402': {
               description: 'Payment Required: 0.003 USDC on Base mainnet (EIP-155:8453)',
