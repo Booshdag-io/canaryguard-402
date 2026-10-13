@@ -6,4 +6,5 @@ dist/
 *.log
 seed-result.json
 mcp-publisher.exe
+state/
 *.exe
