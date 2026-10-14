@@ -18,7 +18,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors({ origin: '*', methods: ['GET', 'POST', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Accept', 'X-PAYMENT', 'PAYMENT-SIGNATURE', 'MCP-Protocol-Version', 'Mcp-Session-Id'],
-    exposedHeaders: ['WWW-Authenticate', 'X-PAYMENT', 'PAYMENT-SIGNATURE', 'X-402-Version', 'Location', 'PAYMENT-REQUIRED', 'PAYMENT-RESPONSE', 'EXTENSION-RESPONSES', 'Idempotency-Replayed',
+    exposedHeaders: ['WWW-Authenticate', 'X-PAYMENT', 'PAYMENT-SIGNATURE', 'X-402-Version', 'Location', 'PAYMENT-REQUIRED', 'PAYMENT-RESPONSE', 'EXTENSION-RESPONSES', 'Idempotency-Replayed', 'Payment-Receipt',
       'X-402-Payment-To', 'X-402-Amount', 'X-402-Amount-Units', 'X-402-Asset', 'X-402-Network', 'X-402-Chain-Id', 'X-Request-Id'] }));
   app.use((req, res, next) => {
     const start = Date.now();
@@ -68,6 +68,36 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
         res.setHeader('X-402-Asset', ASSET);
         res.setHeader('X-402-Network', 'base');
         res.setHeader('X-402-Chain-Id', '8453');
+        const challengeId = randomUUID();
+        const reqPayload = {
+          amount: '3000',
+          chainId: 8453,
+          currency: ASSET,
+          decimals: 6,
+          recipient: payments.config.payTo,
+        };
+        const reqB64 = Buffer.from(JSON.stringify(reqPayload)).toString('base64url');
+        const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+        res.setHeader('WWW-Authenticate', `Payment id="${challengeId}", realm="canaryguard-402.onrender.com", method="evm", intent="charge", request="${reqB64}", expires="${expires}"`);
+        const pr = res.getHeader('PAYMENT-REQUIRED');
+        if (typeof pr === 'string') {
+          try {
+            const parsed = JSON.parse(Buffer.from(pr, 'base64').toString('utf8'));
+            parsed.x402Version = 2;
+            const resUrl = payments.config.publicUrl.startsWith('http://') && !payments.config.publicUrl.includes('localhost')
+              ? 'https://' + payments.config.publicUrl.slice(7) + '/v1/sanitize'
+              : payments.config.publicUrl + '/v1/sanitize';
+            parsed.resource = {
+              url: resUrl,
+              description: DESCRIPTION.slice(0, 440),
+              mimeType: 'application/json',
+            };
+            if (Array.isArray(parsed.accepts) && parsed.accepts[0]) {
+              delete parsed.accepts[0].resource;
+            }
+            res.setHeader('PAYMENT-REQUIRED', Buffer.from(JSON.stringify(parsed)).toString('base64'));
+          } catch {}
+        }
       }
       return (origWriteHead as any)(statusCode, ...args);
     } as any;
@@ -86,6 +116,19 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   if (fs.existsSync(publicDir)) {
     app.use(express.static(publicDir));
   }
+  app.get('/favicon.ico', (_req, res) => {
+    const p = path.join(publicDir, 'favicon.ico');
+    if (fs.existsSync(p)) {
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.type('image/x-icon').sendFile(p);
+    }
+    res.status(204).end();
+  });
+  app.head('/favicon.ico', (_req, res) => {
+    res.setHeader('Content-Type', 'image/x-icon');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.status(200).end();
+  });
   app.get('/llms.txt', (_req, res) => {
     const p = path.join(publicDir, 'llms.txt');
     if (fs.existsSync(p)) return res.sendFile(p);
@@ -146,6 +189,11 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
       title: 'CanaryGuard 402',
       version: SERVICE_VERSION,
       description: DESCRIPTION,
+      contact: {
+        name: 'AK Kurox',
+        email: 'ak10082247@gmail.com',
+        url: 'https://github.com/ak10082247-max/canaryguard-402',
+      },
     },
     tags: [
       { name: 'AI Security', description: 'Prompt-injection detection and sanitization' },
@@ -184,6 +232,17 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
           'x-price': '0.003',
           'x-currency': 'USDC',
           'x-network': 'base',
+          'x-payment-info': {
+            network: NETWORK,
+            chainId: 8453,
+            asset: ASSET,
+            currency: 'USDC',
+            amount: '3000',
+            price: '0.003 USDC',
+            payTo: payments.config.payTo,
+            scheme: 'exact',
+            facilitator: 'https://api.cdp.coinbase.com/platform/v2/x402',
+          },
         },
       },
     },
