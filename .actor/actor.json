@@ -1,0 +1,19 @@
+{
+  "actorSpecification": 1,
+  "name": "canaryguard-402",
+  "title": "CanaryGuard-402: Prompt Injection Firewall & AI Safety Scrubber",
+  "description": "Multi-layer deterministic prompt-injection detection, heuristic safety shield, and wallet-drainer scrubber for autonomous AI agents. Monetized via Base x402 and Apify PPE.",
+  "version": "1.0",
+  "dockerfile": "../Dockerfile",
+  "readme": "../README.md",
+  "payPerEvent": {
+    "events": {
+      "sanitize_content": {
+        "eventTitle": "Prompt Injection Sanitization",
+        "eventDescription": "Deterministic prompt-injection scrubbing and heuristic content safety evaluation",
+        "eventPriceUsd": 0.003
+      }
+    }
+  },
+  "input": "./input_schema.json"
+}
