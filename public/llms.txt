@@ -71,3 +71,19 @@ Returns `402 Payment Required` with both `PAYMENT-REQUIRED` (v2 RFC) challenge a
 - **Server Name**: `canaryguard-402`
 - **Tool**: `canary_sanitize`
 - **Description**: Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits. Cost: 0.003 USDC on Base.
+
+## Upstream & Ecosystem Services: StealthGuard-402
+For autonomous agents requiring live web scraping through Cloudflare Turnstile, Polymarket orderbook alpha, or on-chain pre-trade agent token gating, CanaryGuard powers the deterministic security engine of **StealthGuard-402**:
+
+- **Service URL**: https://stealthguard-402.onrender.com
+- **x402 Manifest**: https://stealthguard-402.onrender.com/.well-known/x402
+- **MCP Endpoint**: https://stealthguard-402.onrender.com/mcp
+- **Stdio Client**: `npx -y stealthguard-mcp` or `uvx stealthguard-mcp`
+- **Apify Actor**: https://apify.com/kuroxreal/stealthguard-402
+
+### Extended Tools Available on StealthGuard-402:
+1. `stealth_scrape_and_sanitize` ($0.02 USDC via x402 on Base): Bypasses Cloudflare bot detection via Scrapling StealthyFetcher, converts DOM to LLM Markdown/JSON, and runs CanaryGuard deterministic sanitization.
+2. `polymarket_alpha_divergence` ($0.05 USDC via x402 on Base): Scans Polymarket Gamma + CLOB orderbooks for volume spikes and smart-money spread divergence with CanaryGuard resolution audit.
+3. `pre_trade_agent_gate` ($0.03 USDC via x402 on Base): Deterministic TRUST / BLOCK verdict combining DexScreener + Base/Solana RPC honeypot inspection with CanaryGuard metadata injection scrubbing.
+4. `health_and_sample` ($0.00 Free): 100% uptime probe and sample payload discovery.
+

@@ -58,6 +58,25 @@ const result = await client.sanitize("Untrusted scraped text or user prompt", { 
 
 ---
 
+## ⚡ Upstream Ecosystem Service: StealthGuard-402
+
+For autonomous AI agents and trading bots requiring live web scraping through Cloudflare Turnstile, Polymarket orderbook alpha, or on-chain pre-trade agent token gating, CanaryGuard powers the deterministic security engine of **[StealthGuard-402](https://github.com/ak10082247-max/stealthguard-402)**:
+
+- 🌐 **Live Service**: [https://stealthguard-402.onrender.com](https://stealthguard-402.onrender.com)
+- 🤖 **x402 Manifest**: `https://stealthguard-402.onrender.com/.well-known/x402`
+- 📡 **MCP Remote**: `https://stealthguard-402.onrender.com/mcp`
+- 💻 **Zero-Config Stdio MCP**: `npx -y stealthguard-mcp` or `uvx stealthguard-mcp`
+- 🐝 **Apify Store Actor**: [kuroxreal/stealthguard-402](https://apify.com/kuroxreal/stealthguard-402)
+
+| Tool | Cost | Capability |
+| :--- | :--- | :--- |
+| `stealth_scrape_and_sanitize` | **$0.02 USDC** | Cloudflare Turnstile / anti-bot bypass via Scrapling StealthyFetcher + CanaryGuard prompt-injection firewall |
+| `polymarket_alpha_divergence` | **$0.05 USDC** | Live Polymarket Gamma + CLOB orderbook spread & whale divergence scanner + resolution criteria audit |
+| `pre_trade_agent_gate` | **$0.03 USDC** | On-chain DexScreener + Base/Solana RPC honeypot & bytecode gate + CanaryGuard metadata sanitization |
+| `health_and_sample` | **Free ($0.00)** | Zero-paywall uptime discovery probe for MCP directories (Glama, Smithery, x402Atlas) |
+
+---
+
 ## Configuration
 
 | Setting | Value |

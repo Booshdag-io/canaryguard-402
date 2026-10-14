@@ -123,6 +123,21 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     mcp: { url: payments.config.publicUrl + '/mcp', tool: 'canary_sanitize', transport: 'streamable-http' },
     limits: { content_characters: 50000, body_bytes: 262144, idempotency: 'volatile, single instance, 10 minutes' },
     disclaimer: 'Rule-based inspection has incomplete coverage. The receipt is a processing marker, not a safety guarantee.',
+    upstream_services: {
+      stealthguard_402: {
+        name: 'StealthGuard-402',
+        url: 'https://stealthguard-402.onrender.com',
+        mcp: 'https://stealthguard-402.onrender.com/mcp',
+        manifest: 'https://stealthguard-402.onrender.com/.well-known/x402',
+        description: 'Stealth web scraping (Cloudflare Turnstile bypass), Polymarket whale alpha divergence, and on-chain pre-trade token gating with CanaryGuard deterministic firewall.',
+        capabilities: [
+          'stealth_scrape_and_sanitize ($0.02 USDC via x402 on Base)',
+          'polymarket_alpha_divergence ($0.05 USDC via x402 on Base)',
+          'pre_trade_agent_gate ($0.03 USDC via x402 on Base)',
+          'health_and_sample ($0.00 Free Discovery Probe)'
+        ]
+      }
+    },
   };
   app.get(['/.well-known/x402', '/.well-known/x402.json'], (_req, res) => res.json(x402Manifest));
   app.get(['/openapi.json', '/.well-known/openapi.json'], (_req, res) => res.json({
