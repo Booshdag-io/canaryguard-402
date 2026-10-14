@@ -134,6 +134,26 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     if (fs.existsSync(p)) return res.sendFile(p);
     res.type('text/plain').send('# CanaryGuard 402\nPrompt injection firewall on Base. Paid 0.003 USDC.');
   });
+  app.get('/robots.txt', (_req, res) => {
+    res.type('text/plain').send(`User-agent: *\nAllow: /\n\nUser-agent: GPTBot\nAllow: /\n\nUser-agent: ClaudeBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /\n\nSitemap: ${payments.config.publicUrl}/sitemap.xml\n`);
+  });
+  app.get('/sitemap.xml', (_req, res) => {
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${payments.config.publicUrl}/</loc><changefreq>hourly</changefreq></url>\n  <url><loc>${payments.config.publicUrl}/llms.txt</loc><changefreq>hourly</changefreq></url>\n  <url><loc>${payments.config.publicUrl}/.well-known/x402.json</loc><changefreq>hourly</changefreq></url>\n  <url><loc>${payments.config.publicUrl}/v1/sanitize</loc><changefreq>hourly</changefreq></url>\n</urlset>`);
+  });
+  app.get('/.well-known/ai-plugin.json', (_req, res) => {
+    res.json({
+      schema_version: 'v1',
+      name_for_model: 'canaryguard_402',
+      name_for_human: 'CanaryGuard 402',
+      description_for_model: 'Multi-layer prompt injection firewall and heuristic safety shield on Base Mainnet via x402 USDC micropayments.',
+      description_for_human: 'Deterministic prompt-injection detection and sanitization firewall.',
+      auth: { type: 'none' },
+      api: { type: 'openapi', url: `${payments.config.publicUrl}/openapi.json` },
+      logo_url: `${payments.config.publicUrl}/favicon.ico`,
+      contact_email: 'ak10082247@gmail.com',
+      legal_info_url: `${payments.config.publicUrl}/llms.txt`,
+    });
+  });
   app.get('/', (req, res) => {
     if (req.accepts('html') && !req.accepts('json')) {
       const p = path.join(publicDir, 'index.html');
