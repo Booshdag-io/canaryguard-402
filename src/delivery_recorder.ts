@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import { ENDPOINT_MAP } from './config.js';
 
 export interface DeliveryRecord {
   timestamp_utc: string;
+  req_id?: string;
+  settled: boolean;
+  tx_hash?: string | null;
   payer_wallet: string;
   amount_usdc: number;
   endpoint: string;
@@ -19,9 +23,10 @@ export interface DeliveryRecord {
 
 const MAX_MEMORY_RECORDS = 200;
 const memoryStore: DeliveryRecord[] = [];
+const paidMemoryStore: DeliveryRecord[] = [];
 const logFilePath = path.join(process.cwd(), 'deliveries.jsonl');
 
-function decodePayerFromHeader(rawHeader?: string): { payer: string; amount: number } {
+function decodePayerFromHeader(rawHeader?: string, defaultUsd = 0.008): { payer: string; amount: number } {
   if (!rawHeader) return { payer: 'unpaid_probe', amount: 0.0 };
   try {
     let jsonStr = rawHeader;
@@ -29,34 +34,29 @@ function decodePayerFromHeader(rawHeader?: string): { payer: string; amount: num
       jsonStr = Buffer.from(rawHeader, 'base64').toString('utf8');
     }
     const parsed = JSON.parse(jsonStr);
-    
-    // Check EIP-3009 structure
-    if (parsed.authorization && parsed.authorization.from) {
-      const amt = parsed.authorization.value ? Number(parsed.authorization.value) / 1e6 : 0.005;
-      return { payer: parsed.authorization.from.toLowerCase(), amount: amt };
-    }
-    if (parsed.from) {
-      const amt = parsed.value ? Number(parsed.value) / 1e6 : 0.005;
-      return { payer: parsed.from.toLowerCase(), amount: amt };
+    const auth = parsed.payload?.authorization || parsed.authorization || parsed;
+    if (auth && auth.from) {
+      const amt = auth.value ? Number(auth.value) / 1e6 : defaultUsd;
+      return { payer: String(auth.from).toLowerCase(), amount: amt };
     }
     if (parsed.payer) {
-      return { payer: parsed.payer.toLowerCase(), amount: Number(parsed.amount || 0.005) };
+      return { payer: String(parsed.payer).toLowerCase(), amount: Number(parsed.amount || defaultUsd) };
     }
   } catch {}
-  return { payer: 'unknown_signer', amount: 0.005 };
+  return { payer: 'unknown_signer', amount: defaultUsd };
 }
 
 export function recordDeliveryMiddleware(req: Request, res: Response, next: NextFunction) {
-  // Skip internal health pings and static favicon
   if (req.path === '/health' || req.path === '/ping' || req.path === '/favicon.ico') {
     return next();
   }
 
   const startTime = Date.now();
+  const spec = ENDPOINT_MAP.get(req.path);
+  const defaultUsd = spec ? Number(spec.priceUsd) : 0.008;
   const rawPaymentHdr = (req.headers['payment-signature'] || req.headers['x-payment']) as string | undefined;
-  const { payer, amount } = decodePayerFromHeader(rawPaymentHdr);
+  const { payer, amount } = decodePayerFromHeader(rawPaymentHdr, defaultUsd);
 
-  // Capture response body preview
   const originalJson = res.json.bind(res);
   const originalSend = res.send.bind(res);
   let capturedBody = '';
@@ -67,6 +67,7 @@ export function recordDeliveryMiddleware(req: Request, res: Response, next: Next
     } catch {
       capturedBody = String(body);
     }
+    res.locals.responsePreview = capturedBody.slice(0, 300);
     return originalJson(body);
   };
 
@@ -77,6 +78,7 @@ export function recordDeliveryMiddleware(req: Request, res: Response, next: Next
       } catch {
         capturedBody = String(body);
       }
+      res.locals.responsePreview = capturedBody.slice(0, 300);
     }
     return originalSend(body);
   };
@@ -84,38 +86,60 @@ export function recordDeliveryMiddleware(req: Request, res: Response, next: Next
   res.on('finish', () => {
     const latency_ms = Date.now() - startTime;
     const client_ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || 'unknown';
-    
+
     let resolvedPayer = payer;
     let resolvedAmount = amount;
+    let settled = false;
+    let txHash: string | null = null;
 
-    // Check payment-response header for confirmed settlement
     const payRespHeader = res.getHeader('PAYMENT-RESPONSE') || res.getHeader('X-PAYMENT-RESPONSE');
     if (payRespHeader && typeof payRespHeader === 'string') {
       try {
         const parsedResp = JSON.parse(Buffer.from(payRespHeader, 'base64').toString('utf8'));
-        if (parsedResp.payer) resolvedPayer = parsedResp.payer.toLowerCase();
+        if (parsedResp.success === true) {
+          settled = true;
+          txHash = parsedResp.transaction || parsedResp.txHash || null;
+        }
+        if (parsedResp.payer) resolvedPayer = String(parsedResp.payer).toLowerCase();
         if (parsedResp.amount) resolvedAmount = Number(parsedResp.amount) / 1e6;
       } catch {}
     }
 
+    const reqInputObj = req.method === 'POST' ? (req.body ?? {}) : (req.query ?? {});
+    let reqInputTruncated: any = reqInputObj;
+    try {
+      const s = JSON.stringify(reqInputObj);
+      if (s.length > 500) reqInputTruncated = s.slice(0, 500);
+    } catch {}
+
     const record: DeliveryRecord = {
       timestamp_utc: new Date().toISOString(),
+      req_id: (res.getHeader('X-Request-Id') as string) || undefined,
+      settled,
+      tx_hash: txHash,
       payer_wallet: resolvedPayer,
-      amount_usdc: res.statusCode === 200 ? (resolvedAmount || 0.005) : 0.0,
+      amount_usdc: (settled || (res.statusCode === 200 && rawPaymentHdr)) ? (resolvedAmount || defaultUsd) : 0.0,
       endpoint: req.path,
       method: req.method,
       user_agent: req.get('user-agent') || 'none',
       client_ip,
       referer: req.get('referer') || 'direct',
-      request_input: req.method === 'POST' ? req.body : req.query,
+      request_input: reqInputTruncated,
       http_status: res.statusCode,
       latency_ms,
-      response_preview: (capturedBody || '').slice(0, 300)
+      response_preview: (capturedBody || '').slice(0, 300),
     };
 
     memoryStore.unshift(record);
     if (memoryStore.length > MAX_MEMORY_RECORDS) {
       memoryStore.pop();
+    }
+
+    if (settled || (res.statusCode === 200 && Boolean(rawPaymentHdr))) {
+      paidMemoryStore.unshift(record);
+      if (paidMemoryStore.length > MAX_MEMORY_RECORDS) {
+        paidMemoryStore.pop();
+      }
     }
 
     try {
@@ -128,4 +152,8 @@ export function recordDeliveryMiddleware(req: Request, res: Response, next: Next
 
 export function getRecentDeliveries(): DeliveryRecord[] {
   return [...memoryStore];
+}
+
+export function getPaidDeliveries(): DeliveryRecord[] {
+  return [...paidMemoryStore];
 }
