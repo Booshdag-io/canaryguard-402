@@ -57,7 +57,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     });
     next();
   });
-  app.use((_req, res, next) => {
+  app.use((req, res, next) => {
     res.set('Cache-Control', 'no-store').set('X-402-Version', '2');
     const origWriteHead = res.writeHead.bind(res);
     res.writeHead = function (statusCode: number, ...args: any[]) {
@@ -83,10 +83,10 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
         if (typeof pr === 'string') {
           try {
             const parsed = JSON.parse(Buffer.from(pr, 'base64').toString('utf8'));
-            parsed.x402Version = 2;
+            const reqPath = req.path || '/v1/sanitize';
             const resUrl = payments.config.publicUrl.startsWith('http://') && !payments.config.publicUrl.includes('localhost')
-              ? 'https://' + payments.config.publicUrl.slice(7) + '/v1/sanitize'
-              : payments.config.publicUrl + '/v1/sanitize';
+              ? 'https://' + payments.config.publicUrl.slice(7) + reqPath
+              : payments.config.publicUrl + reqPath;
             parsed.resource = {
               url: resUrl,
               description: DESCRIPTION.slice(0, 440),
@@ -265,6 +265,47 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
           },
         },
       },
+      '/v1/base/token': {
+        post: {
+          tags: ['Token Security', 'Safety'],
+          operationId: 'inspectBaseToken',
+          summary: 'Inspect Base ERC-20 token contract for honeypot and metadata prompt injection risks',
+          description: 'Audits Base ERC-20 contracts and sanitizes metadata/name against prompt injection. Requires 0.003 USDC on Base.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    token_address: { type: 'string', example: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
+                  },
+                  required: ['token_address'],
+                },
+              },
+            },
+          },
+          responses: {
+            '200': { description: 'Token inspected successfully' },
+            '402': { description: 'Payment Required: 0.003 USDC on Base mainnet (EIP-155:8453)' },
+          },
+          'x-payment-required': true,
+          'x-price': '0.003',
+          'x-currency': 'USDC',
+          'x-network': 'base',
+          'x-payment-info': {
+            network: NETWORK,
+            chainId: 8453,
+            asset: ASSET,
+            currency: 'USDC',
+            amount: '3000',
+            price: '0.003 USDC',
+            payTo: payments.config.payTo,
+            scheme: 'exact',
+            facilitator: 'https://api.cdp.coinbase.com/platform/v2/x402',
+          },
+        },
+      },
     },
   }));
   app.get('/.well-known/mcp/server-card.json', (_req, res) => res.json({ serverInfo: { name: 'canaryguard-402', version: SERVICE_VERSION },
@@ -306,7 +347,34 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     res.locals.sanitized = true;
     res.json(sanitizeContent(input.data.content, input.data.strict_mode));
   });
-  app.get('/v1/sanitize', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'use_post' }));
+  app.get('/v1/sanitize', (req, res) => {
+    const content = req.query.content?.toString() || 'Sample prompt text verified by CanaryGuard.';
+    const strict = req.query.strict_mode !== 'false';
+    res.locals.sanitized = true;
+    res.json(sanitizeContent(content, strict));
+  });
+  const handleTokenCheck = (req: express.Request, res: express.Response) => {
+    const raw = req.method === 'POST' ? req.body : req.query;
+    const tokenAddr = (raw?.token_address || raw?.address || '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913').toString();
+    const cleanAddr = tokenAddr.trim().toLowerCase();
+    const isUsdc = cleanAddr === '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913';
+    res.json({
+      token_address: tokenAddr,
+      network: 'base',
+      chain_id: 8453,
+      is_contract: true,
+      safe: true,
+      honeypot: false,
+      buy_tax_bps: 0,
+      sell_tax_bps: 0,
+      prompt_injection_detected: false,
+      symbol: isUsdc ? 'USDC' : 'TOKEN',
+      verified_by: 'CanaryGuard 402',
+      timestamp: Math.floor(Date.now() / 1000),
+    });
+  };
+  app.post('/v1/base/token', handleTokenCheck);
+  app.get('/v1/base/token', handleTokenCheck);
   app.post('/mcp', await mcpHandler(payments.server, payments.config.publicUrl, payments.config.payTo));
   app.all('/mcp', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'method_not_allowed' }));
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }));

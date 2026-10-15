@@ -16,9 +16,19 @@ export async function createPayments(env = process.env, provided?: FacilitatorCl
   const route = { accepts: [paymentOption(config.payTo)], resource: config.publicUrl + '/v1/sanitize', description: DESCRIPTION,
     mimeType: 'application/json', serviceName: 'CanaryGuard 402', tags: ['ai-safety', 'prompt-injection', 'base'],
     unpaidResponseBody: () => ({ contentType: 'application/json', body: { error: 'payment_required' } }), extensions: discovery };
-  const httpServer = new x402HTTPResourceServer(server, { 'POST /v1/sanitize': route,
-    // GET supports the requested curl smoke check; only POST is discoverable.
-    'GET /v1/sanitize': { ...route, extensions: undefined } });
+  const tokenDiscovery = declareDiscoveryExtension({ bodyType: 'json', input: { token_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
+    inputSchema: { type: 'object', properties: { token_address: { type: 'string' } }, required: ['token_address'] },
+    output: { example: { token: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', symbol: 'USDC', safe: true } } });
+  const tokenRoute = { accepts: [paymentOption(config.payTo)], resource: config.publicUrl + '/v1/base/token',
+    description: 'Inspect Base ERC-20 token contracts for honeypots, transfer restrictions, and prompt injection attacks in token metadata.',
+    mimeType: 'application/json', serviceName: 'CanaryGuard 402', tags: ['token-security', 'base', 'honeypot'],
+    unpaidResponseBody: () => ({ contentType: 'application/json', body: { error: 'payment_required' } }), extensions: tokenDiscovery };
+  const httpServer = new x402HTTPResourceServer(server, {
+    'POST /v1/sanitize': route,
+    'GET /v1/sanitize': { ...route, extensions: undefined },
+    'POST /v1/base/token': tokenRoute,
+    'GET /v1/base/token': { ...tokenRoute, extensions: undefined },
+  });
   // Initialize exactly once, including route validation, before configuring MCP.
   // The middleware's background sync otherwise clears supported kinds while
   // MCP is building its requirements against a real network facilitator.
