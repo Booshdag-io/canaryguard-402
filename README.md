@@ -1,13 +1,14 @@
 # CanaryGuard 402
 
 [![Base Mainnet](https://img.shields.io/badge/Network-Base%20Mainnet%20(8453)-blue)](https://base.org)
+[![MCPize](https://img.shields.io/badge/MCPize-Subscribe%20%2419%2Fmo-8A2BE2?logo=stripe&logoColor=white)](https://mcpize.com)
 [![x402 Protocol](https://img.shields.io/badge/Protocol-x402%20v2-green)](https://x402.org)
 [![Coinbase CDP Bazaar](https://img.shields.io/badge/CDP%20Bazaar-Active%20%26%20Indexed-purple)](https://docs.cdp.coinbase.com/x402)
 [![ElizaOS Plugin](https://img.shields.io/npm/v/@kurox_real/plugin-canaryguard?label=ElizaOS%20Plugin&color=orange)](https://www.npmjs.com/package/@kurox_real/plugin-canaryguard)
 [![AgentKit Plugin](https://img.shields.io/npm/v/@kurox_real/agentkit-canaryguard-402?label=AgentKit%20Action&color=crimson)](https://www.npmjs.com/package/@kurox_real/agentkit-canaryguard-402)
 [![Client SDK](https://img.shields.io/npm/v/@kurox_real/canaryguard-client?label=TS%20SDK&color=teal)](https://www.npmjs.com/package/@kurox_real/canaryguard-client)
 
-Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI agents. `POST /v1/sanitize` costs **0.003 USDC** on Base mainnet through the Coinbase CDP x402 facilitator. A remote MCP tool exposes the same inspection with payment per tool call.
+Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI agents. `POST /v1/sanitize` costs **0.003 USDC** on Base mainnet through the Coinbase CDP x402 facilitator. A remote MCP tool exposes the same inspection with payment per tool call, and flat-rate monthly fiat subscriptions are supported via MCPize.
 
 - 🌐 **Live Web Playground**: [canaryguard-402.onrender.com](https://canaryguard-402.onrender.com)
 - 🤖 **Agent Discovery**: [canaryguard-402.onrender.com/llms.txt](https://canaryguard-402.onrender.com/llms.txt)
@@ -15,6 +16,21 @@ Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI 
   - `@kurox_real/plugin-canaryguard` — Official ElizaOS Plugin
   - `@kurox_real/agentkit-canaryguard-402` — Coinbase AgentKit Action Provider
   - `@kurox_real/canaryguard-client` — TypeScript SDK with automatic x402 payment handling
+
+---
+
+## 💳 Subscribe on MCPize / Apify ($19/mo Pro)
+
+For autonomous agent developers and AI infrastructure teams who prefer standard recurring credit card billing (via Stripe Connect) over per-call crypto payments, **CanaryGuard-402** is available on **[MCPize](https://mcpize.com)**:
+
+| Plan | Price | Monthly Quota | Key Features |
+|---|---|---|---|
+| **Starter** | **$9.99 / mo** | 2,500 checks | System prompt override & jailbreak neutralization, key redaction |
+| **Pro (Recommended)** | **$19.99 / mo** | 25,000 checks | Sub-10ms strict mode, ElizaOS & AgentKit drop-in plugin, 99.9% uptime SLA |
+| **Enterprise** | **$49.99 / mo** | 100,000 checks | Custom threat dictionaries, dedicated high-availability instance, engineer SLA |
+
+- **Instant 1-Click Subscribe**: Paste `https://github.com/ak10082247-max/canaryguard-402` into your **[MCPize Dashboard](https://mcpize.com/dashboard)**.
+- **Direct Remote MCP Endpoint**: `https://canaryguard-402.onrender.com/mcp`
 
 ---
 

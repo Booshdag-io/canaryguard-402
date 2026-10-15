@@ -1,0 +1,88 @@
+{
+  "$schema": "https://mcpize.com/schemas/v1/mcpize.schema.json",
+  "id": "canaryguard-402",
+  "name": "CanaryGuard-402",
+  "title": "CanaryGuard 402 - Deterministic Prompt-Injection Firewall",
+  "description": "Zero-latency deterministic prompt-injection firewall, secret redaction, and honeypot scrubber for autonomous AI agents and LLM tool chains.",
+  "version": "1.0.2",
+  "author": {
+    "name": "AK Kurox",
+    "email": "ak10082247@gmail.com",
+    "url": "https://github.com/ak10082247-max"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ak10082247-max/canaryguard-402"
+  },
+  "homepage": "https://canaryguard-402.onrender.com",
+  "category": "security",
+  "tags": [
+    "prompt-injection",
+    "firewall",
+    "security",
+    "ai-agents",
+    "llm-guardrails",
+    "base",
+    "x402"
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://canaryguard-402.onrender.com/mcp"
+    }
+  ],
+  "monetization": {
+    "enabled": true,
+    "provider": "stripe",
+    "currency": "usd",
+    "pricing": {
+      "type": "subscription",
+      "tiers": [
+        {
+          "id": "starter",
+          "name": "Starter",
+          "price_usd_per_month": 9.99,
+          "quota_requests_per_month": 2500,
+          "features": [
+            "2,500 monthly sanitization & firewall checks",
+            "System prompt override & jailbreak neutralization",
+            "EVM private key & mnemonic regex redaction",
+            "Tamper-evident canaryguard safety receipt",
+            "Standard community support"
+          ]
+        },
+        {
+          "id": "pro",
+          "name": "Pro (Recommended)",
+          "price_usd_per_month": 19.99,
+          "quota_requests_per_month": 25000,
+          "is_featured": true,
+          "features": [
+            "25,000 monthly sanitization checks (<10ms execution)",
+            "Strict mode with zero false-negative threshold",
+            "Autonomous agent tool-call argument sanitization",
+            "ElizaOS & AgentKit drop-in plugin support",
+            "Priority concurrency & 99.9% uptime SLA"
+          ]
+        },
+        {
+          "id": "enterprise",
+          "name": "Enterprise",
+          "price_usd_per_month": 49.99,
+          "quota_requests_per_month": 100000,
+          "features": [
+            "100,000 monthly requests + unlimited burst",
+            "Custom domain prompt injection dictionaries",
+            "Dedicated multi-region high-availability endpoint",
+            "Private tenant logging & compliance audit trail",
+            "Direct 1-on-1 engineer Slack/Telegram channel"
+          ]
+        }
+      ],
+      "pay_per_call": {
+        "enabled": true,
+        "price_usd": 0.003
+      }
+    }
+  }
+}
