@@ -375,7 +375,14 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   };
   app.post('/v1/base/token', handleTokenCheck);
   app.get('/v1/base/token', handleTokenCheck);
-  app.post('/mcp', await mcpHandler(payments.server, payments.config.publicUrl, payments.config.payTo));
+  const handler = await mcpHandler(payments.server, payments.config.publicUrl, payments.config.payTo);
+  app.post('/mcp', handler);
+  app.post('/', (req, res, next) => {
+    if (req.body && (req.body.jsonrpc || req.body.method)) {
+      return (handler as any)(req, res, next);
+    }
+    return next();
+  });
   app.all('/mcp', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'method_not_allowed' }));
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }));
   app.use((error: { type?: string; status?: number }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
