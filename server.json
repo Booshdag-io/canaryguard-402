@@ -3,7 +3,7 @@
   "name": "io.github.ak10082247-max/canaryguard-402",
   "title": "CanaryGuard 402",
   "description": "Deterministic prompt-injection detection & sanitization for AI agents via x402 on Base.",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "websiteUrl": "https://canaryguard-402.onrender.com",
   "repository": {
     "url": "https://github.com/ak10082247-max/canaryguard-402",
