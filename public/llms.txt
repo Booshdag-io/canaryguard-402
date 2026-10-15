@@ -1,89 +1,38 @@
-# CanaryGuard 402 - LLM & AI Agent Integration Guide
+# CanaryGuard 402 - 15-Endpoint AI Agent Security & Base On-Chain Intelligence Suite
 
-> Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI agents, paid per call via the x402 protocol (USDC on Base).
-
-## Overview
-CanaryGuard 402 is an ultra-fast (<5ms), deterministic security firewall designed specifically for autonomous AI agents that read untrusted web pages, user messages, scraped content, or third-party tool outputs. It sanitizes text before it enters the LLM's context window, stripping prompt injection, jailbreaks, hidden CSS/HTML payloads, unicode smuggling, and wallet-draining commands.
+> Deterministic prompt-injection firewall, Base token/wallet security auditor, and real-time DeFi/Polymarket oracle for autonomous AI agents, paid per call via x402 (USDC on Base Mainnet).
 
 ## Service Metadata
-- **Service Name**: CanaryGuard 402
-- **Website & Docs**: https://canaryguard-402.onrender.com
+- **Service Name**: CanaryGuard 402 (`v1.2.0`)
+- **Base URL**: https://canaryguard-402.onrender.com
 - **x402 Manifest**: https://canaryguard-402.onrender.com/.well-known/x402.json
+- **OpenAPI Spec**: https://canaryguard-402.onrender.com/openapi.json
 - **Health Check**: https://canaryguard-402.onrender.com/health
-- **Live Stats**: https://canaryguard-402.onrender.com/stats
-- **Network**: Base Mainnet (`eip155:8453`)
-- **Asset**: USD Coin (USDC: `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`)
-- **Payment Scheme**: Exact EVM (`exact`)
-- **Cost**: 0.003 USDC (3000 atomic units, 6 decimals)
-- **Facilitator**: Coinbase CDP Facilitator / x402.org
+- **Network**: Base Mainnet (`eip155:8453`, Chain ID `8453`)
+- **Asset**: USD Coin (`0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`)
+- **Payment Scheme**: Exact EVM (`exact`, EIP-3009 `transferWithAuthorization`)
+- **Facilitator**: Coinbase CDP Facilitator (`https://api.cdp.coinbase.com/platform/v2/x402`)
 - **Merchant Address**: `0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1`
 
-## Paid API Endpoint
+## 15 Paid x402 Endpoints (Dual GET & POST, Pre-Warmed <50ms)
 
-### POST /v1/sanitize
-Sanitizes untrusted text and blocks detected wallet-draining commands before context ingestion.
+1. **`POST /v1/sanitize`** ($0.008 USDC) — Prompt-injection & wallet-drainer firewall (`{"content": "...", "strict_mode": true}`)
+2. **`POST /v1/base/token`** ($0.008 USDC) — Base ERC-20 token contract & metadata safety audit (`{"token_address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"}`)
+3. **`POST /v1/wallet-analysis`** ($0.015 USDC) — EVM wallet security, nonce, balance & drainer-exposure profile (`{"wallet_address": "0x..."}`)
+4. **`POST /v1/contract-info`** ($0.009 USDC) — EVM contract bytecode size, proxy/EIP-7702 status & verified selectors (`{"contract_address": "0x..."}`)
+5. **`POST /v1/wallet-sanctions-check`** ($0.009 USDC) — OFAC/SDN & exploit-list compliance screening for EVM/Solana addresses (`{"address": "0x..."}`)
+6. **`POST /v1/uniswap-pool-state`** ($0.009 USDC) — Base DEX pool liquidity, spot price & rug-risk audit (`{"pool_or_token_address": "0x..."}`)
+7. **`POST /v1/crypto-price-onchain`** ($0.008 USDC) — Tamper-resistant on-chain token prices on Base via Chainlink/TWAP (`{"symbol": "ETH"}`)
+8. **`POST /v1/json-repair-and-sanitize`** ($0.008 USDC) — Repairs broken LLM JSON output and strips prompt injections (`{"raw_json": "..."}`)
+9. **`POST /v1/url-agent-readiness`** ($0.009 USDC) — Audits any website for `llms.txt`, `x402`, `openapi.json`, MCP, and hidden DOM traps (`{"url": "https://..."}`)
+10. **`POST /v1/tx-status-base`** ($0.008 USDC) — Base transaction receipt, gas, confirmation & EIP-3009 transfer decoder (`{"tx_hash": "0x..."}`)
+11. **`POST /v1/polymarket-odds-pulse`** ($0.015 USDC) — Live Polymarket active market probabilities & 24h volume movers (`{"category": "crypto"}`)
+12. **`POST /v1/defi-yields-safe`** ($0.010 USDC) — Top verified Base stablecoin & ETH yields (Morpho, Aave V3, Aerodrome) (`{"asset": "USDC"}`)
+13. **`POST /v1/llm-token-pricing`** ($0.008 USDC) — Live input/output token cost calculator across frontier LLMs (`{"model": "claude-3-7-sonnet", "input_tokens": 10000, "output_tokens": 2000}`)
+14. **`POST /v1/eip712-signature-audit`** ($0.009 USDC) — Audits EIP-712 / EIP-3009 typed data payloads for permit/approval drainers (`{"verifying_contract": "0x..."}`)
+15. **`POST /v1/mcp-tool-auditor`** ($0.009 USDC) — Audits MCP tool schemas and descriptions for tool-poisoning attacks (`{"tool_name": "...", "tool_description": "..."}`)
 
-**Headers:**
-- `Content-Type: application/json`
-- `PAYMENT-SIGNATURE: <signed-eip712-authorization>` (canonical x402 v2 payment header; required for 200)
-- `X-PAYMENT: <signed-eip712-authorization>` (backward-compatible legacy alias; accepted interchangeably)
-
-**Quick Inspection (0-Payment Probe):**
-```bash
-curl -i https://canaryguard-402.onrender.com/v1/sanitize
-```
-Returns `402 Payment Required` with both `PAYMENT-REQUIRED` (v2 RFC) challenge and legacy parameter headers (`X-402-Payment-To`, `X-402-Amount`, `X-402-Asset`, `X-402-Network`, `X-402-Chain-Id`).
-
-**Request Body:**
-```json
-{
-  "content": "Untrusted text, HTML, or tool output to inspect (1 to 50,000 characters)",
-  "strict_mode": true
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "status": "clean" | "sanitized" | "blocked",
-  "risk_score": 0.01,
-  "injection_detected": false,
-  "threats_neutralized": [],
-  "sanitized_content": "Safe content...",
-  "safety_receipt": "canary-v1-verified",
-  "crypto_addresses": [],
-  "recommended_actions": [],
-  "inspection": {
-    "method": "deterministic-rules",
-    "guaranteed_safe": false,
-    "risk_score_semantics": "heuristic severity, not a probability",
-    "limitations": [
-      "Does not detect every obfuscated, multilingual, or novel instruction attack.",
-      "Does not fetch external stylesheets, render browser layout, or analyze linked resources.",
-      "Address scores reflect text context and do not verify ownership, reputation, or contract safety.",
-      "Treat sanitized content as untrusted data; keep agent instructions and wallet authorization separate."
-    ]
-  }
-}
-```
-
-## Model Context Protocol (MCP) Tool
-- **Server Name**: `canaryguard-402`
-- **Tool**: `canary_sanitize`
-- **Description**: Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits. Cost: 0.003 USDC on Base.
-
-## Upstream & Ecosystem Services: StealthGuard-402
-For autonomous agents requiring live web scraping through Cloudflare Turnstile, Polymarket orderbook alpha, or on-chain pre-trade agent token gating, CanaryGuard powers the deterministic security engine of **StealthGuard-402**:
-
-- **Service URL**: https://stealthguard-402.onrender.com
-- **x402 Manifest**: https://stealthguard-402.onrender.com/.well-known/x402
-- **MCP Endpoint**: https://stealthguard-402.onrender.com/mcp
-- **Stdio Client**: `npx -y stealthguard-mcp` or `uvx stealthguard-mcp`
-- **Apify Actor**: https://apify.com/kuroxreal/stealthguard-402
-
-### Extended Tools Available on StealthGuard-402:
-1. `stealth_scrape_and_sanitize` ($0.02 USDC via x402 on Base): Bypasses Cloudflare bot detection via Scrapling StealthyFetcher, converts DOM to LLM Markdown/JSON, and runs CanaryGuard deterministic sanitization.
-2. `polymarket_alpha_divergence` ($0.05 USDC via x402 on Base): Scans Polymarket Gamma + CLOB orderbooks for volume spikes and smart-money spread divergence with CanaryGuard resolution audit.
-3. `pre_trade_agent_gate` ($0.03 USDC via x402 on Base): Deterministic TRUST / BLOCK verdict combining DexScreener + Base/Solana RPC honeypot inspection with CanaryGuard metadata injection scrubbing.
-4. `health_and_sample` ($0.00 Free): 100% uptime probe and sample payload discovery.
-
+## Sister Services on Base x402
+- **StealthGuard-402** (`https://stealthguard-402.onrender.com/.well-known/x402`): 10 endpoints for Cloudflare Turnstile stealth scraping, Polymarket whale orderbook divergence, and pre-trade agent gating ($0.001–$0.005 USDC).
+- **RugShield-402** (`https://rugshield-402.onrender.com/.well-known/x402.json`): DEX swap simulation and honeypot/tax detector on Base (`POST /v1/scan`, $0.005 USDC).
+- **x402 Agent Tollbooth** (`https://x402-agent-tollbooth.onrender.com/.well-known/x402.json`): AI smart contract auditor and cross-DEX router ($0.001–$0.005 USDC).
