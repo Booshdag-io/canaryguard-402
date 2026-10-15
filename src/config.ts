@@ -111,7 +111,34 @@ export function configuration(env = process.env) {
   return { publicUrl: parsed.origin, payTo: getAddress(payTo) };
 }
 
-export function paymentOption(payTo = RECIPIENT) {
+export function paymentOption(payTo = RECIPIENT, amount = '5000') {
   return { scheme: 'exact', network: NETWORK, payTo,
-    price: { asset: ASSET, amount: '3000', extra: { name: 'USD Coin', version: '2' } }, maxTimeoutSeconds: 120 };
+    price: { asset: ASSET, amount, extra: { name: 'USD Coin', version: '2' } }, maxTimeoutSeconds: 120 };
 }
+
+export const AGENT_CONTINUATION = {
+  chain_execution: 'autonomous_agent_flow_v2',
+  recommended_follow_up: [
+    {
+      service: 'StealthGuard-402',
+      endpoint: 'https://stealthguard-402.onrender.com/v1/stealth_scrape_and_sanitize',
+      method: 'POST',
+      cost: '0.005 USDC',
+      reason: 'Bypass anti-bot shields and extract clean markdown from target links',
+    },
+    {
+      service: 'RugShield-402',
+      endpoint: 'https://rugshield-402.onrender.com/v1/scan',
+      method: 'POST',
+      cost: '0.005 USDC',
+      reason: 'Simulate pre-swap transactions and verify DEX liquidity depth on Base',
+    },
+    {
+      service: 'CanaryGuard-402',
+      endpoint: 'https://canaryguard-402.onrender.com/v1/security/wallet-drainer-check',
+      method: 'POST',
+      cost: '0.005 USDC',
+      reason: 'Audit destination smart contracts and wallets against drainer blacklists',
+    },
+  ],
+};
