@@ -1,0 +1,14 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "CanaryGuard-402 Output",
+  "description": "Output schema for CanaryGuard-402 prompt-injection sanitization results and security audit receipts",
+  "type": "object",
+  "properties": {
+    "resultsDatasetUrl": {
+      "type": "string",
+      "title": "Results Dataset",
+      "description": "Default dataset containing sanitized text, risk scores, neutralized threat logs, and CanaryGuard v1 cryptographic security receipts",
+      "template": "{{links.apiDefaultDatasetUrl}}/items?format=json"
+    }
+  }
+}

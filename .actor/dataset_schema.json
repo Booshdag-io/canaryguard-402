@@ -1,0 +1,98 @@
+{
+  "actorSpecification": 1,
+  "fields": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "title": "Sanitization Status",
+        "description": "clean, sanitized, or blocked",
+        "example": "clean"
+      },
+      "risk_score": {
+        "type": "number",
+        "title": "Risk Score",
+        "description": "Heuristic risk score from 0.0 (safe) to 1.0 (malicious instruction detected)",
+        "example": 0.01
+      },
+      "injection_detected": {
+        "type": "boolean",
+        "title": "Injection Detected",
+        "description": "True if prompt injection, system override, or wallet drain command was found",
+        "example": false
+      },
+      "threats_neutralized": {
+        "type": "array",
+        "title": "Threats Neutralized",
+        "description": "List of neutralized attack patterns (e.g. concealed_unicode, active_html, instruction_override)",
+        "items": {
+          "type": "string"
+        }
+      },
+      "sanitized_content": {
+        "type": "string",
+        "title": "Sanitized Content",
+        "description": "Cleaned, LLM-safe text with all prompt injections and malicious instructions neutralized"
+      },
+      "safety_receipt": {
+        "type": "string",
+        "title": "Safety Receipt",
+        "description": "Verification receipt code: canary-v1-verified",
+        "example": "canary-v1-verified"
+      },
+      "crypto_addresses": {
+        "type": "array",
+        "title": "Extracted Crypto Addresses",
+        "description": "EVM addresses detected in content with contextual risk assessment",
+        "items": {
+          "type": "object"
+        }
+      },
+      "recommended_actions": {
+        "type": "array",
+        "title": "Recommended Security Actions",
+        "description": "Next-hop actions (RugShield honeypot scan, StealthGuard scrape)",
+        "items": {
+          "type": "object"
+        }
+      }
+    },
+    "additionalProperties": true
+  },
+  "views": {
+    "overview": {
+      "title": "Overview",
+      "description": "Summary of prompt injection detections, risk scores, and sanitized content",
+      "transformation": {
+        "fields": [
+          "status",
+          "risk_score",
+          "injection_detected",
+          "safety_receipt",
+          "sanitized_content"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "status": {
+            "label": "Status"
+          },
+          "risk_score": {
+            "label": "Risk Score"
+          },
+          "injection_detected": {
+            "label": "Injection Detected"
+          },
+          "safety_receipt": {
+            "label": "Receipt"
+          },
+          "sanitized_content": {
+            "label": "Sanitized Content"
+          }
+        }
+      }
+    }
+  }
+}

@@ -3,7 +3,7 @@
   "events": {
     "sanitize_content": {
       "eventTitle": "Prompt Injection Sanitization",
-      "eventDescription": "Deterministic prompt-injection scrubbing and heuristic content safety evaluation",
+      "eventDescription": "Deterministic prompt-injection scrubbing, heuristic content safety evaluation, and wallet-drainer neutralization",
       "eventPriceUsd": 0.003
     }
   }
