@@ -82,3 +82,38 @@ export async function executeCanaryGuardSanitize(
     inspection: data.inspection,
   };
 }
+
+export interface CanaryGuardActionProviderConfig {
+  hostUrl?: string;
+  paymentHeader?: string;
+}
+
+/**
+ * Creates a Coinbase AgentKit ActionProvider for CanaryGuard 402.
+ */
+export function canaryGuardActionProvider(config?: CanaryGuardActionProviderConfig) {
+  return {
+    name: "canaryguard",
+    actionProviderName: "canaryguard",
+    getActions: () => [
+      {
+        name: "canary_sanitize",
+        description: "Deterministic prompt-injection firewall and honeypot scrubber on Base via x402 (0.010 USDC). Sanitizes untrusted text and blocks detected instruction overrides or wallet-draining commands.",
+        schema: CanaryGuardSanitizeInputSchema,
+        invoke: async (args: CanaryGuardSanitizeInput) => {
+          return await executeCanaryGuardSanitize(args, config);
+        },
+      },
+    ],
+    actions: [
+      {
+        name: "canary_sanitize",
+        description: "Deterministic prompt-injection firewall and honeypot scrubber on Base via x402 (0.010 USDC). Sanitizes untrusted text and blocks detected instruction overrides or wallet-draining commands.",
+        schema: CanaryGuardSanitizeInputSchema,
+        invoke: async (args: CanaryGuardSanitizeInput) => {
+          return await executeCanaryGuardSanitize(args, config);
+        },
+      },
+    ],
+  };
+}

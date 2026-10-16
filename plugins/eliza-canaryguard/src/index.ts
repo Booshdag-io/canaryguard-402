@@ -44,7 +44,10 @@ export async function sanitizeWithCanaryGuard(
     headers["X-PAYMENT"] = payment;
   }
 
-  const res = await fetch(`${host}/v1/sanitize`, {
+  // Gracefully fallback to zero-wallet instant evaluation preview if no x402 payment header is supplied
+  const endpoint = payment ? `${host}/v1/sanitize` : `${host}/v1/sanitize/preview`;
+
+  const res = await fetch(endpoint, {
     method: "POST",
     headers,
     body: JSON.stringify({
@@ -68,7 +71,7 @@ export async function sanitizeWithCanaryGuard(
 export const sanitizeAction = {
   name: "CANARY_SANITIZE",
   similes: ["SANITIZE_TEXT", "CHECK_INJECTION", "FIREWALL_CHECK", "VERIFY_INPUT_SAFETY"],
-  description: "Runs untrusted text through CanaryGuard 402 on Base mainnet (0.003 USDC) to scrub prompt injection exploits, concealed unicode, and malicious wallet drain instructions.",
+  description: "Runs untrusted text through CanaryGuard 402 on Base mainnet (0.010 USDC) to scrub prompt injection exploits, concealed unicode, and malicious wallet drain instructions.",
   validate: async (_runtime: any, message: any) => {
     return Boolean(message?.content?.text);
   },
@@ -144,7 +147,7 @@ export const promptInjectionEvaluator = {
  */
 export const canaryGuardProvider = {
   get: async (_runtime: any, _message: any, _state?: any) => {
-    return "CanaryGuard 402 deterministic prompt-injection firewall is ACTIVE (0.003 USDC on Base mainnet). Untrusted inputs are scrubbed before wallet execution.";
+    return "CanaryGuard 402 deterministic prompt-injection firewall is ACTIVE (0.010 USDC on Base mainnet). Untrusted inputs are scrubbed before wallet execution.";
   },
 };
 

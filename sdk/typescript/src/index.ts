@@ -2,7 +2,7 @@
  * CanaryGuard 402 - TypeScript / Node SDK
  *
  * Deterministic prompt-injection firewall and honeypot scrubber for AI agents.
- * 0.003 USDC per call on Base (eip155:8453) via x402.
+ * 0.010 USDC per call on Base (eip155:8453) via x402.
  */
 
 import { x402Client, wrapFetchWithPayment } from "@x402/fetch";
@@ -52,10 +52,50 @@ export class CanaryGuardClient {
       const account = privateKeyToAccount(options.privateKey);
       const client = new x402Client();
       registerExactEvmScheme(client, { signer: account });
+
+      // Enforce client-side safety guardrails before signing payments
+      const expectedMerchant = "0x73279fa4bada7cac888c62cda4f5c8104765f6f1";
+      const baseUsdc = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+      const maxPerCallMicroUsdc = 10000n; // 0.010 USDC
+
+      client.onBeforePaymentCreation(async (context) => {
+        const req = context.selectedRequirements;
+        if (req.network !== "eip155:8453") {
+          throw new Error(`Rejected network ${req.network}: Base mainnet required`);
+        }
+        if (req.asset.toLowerCase() !== baseUsdc) {
+          throw new Error(`Rejected asset ${req.asset}: Base USDC required`);
+        }
+        if (req.payTo.toLowerCase() !== expectedMerchant) {
+          throw new Error(`Rejected payTo ${req.payTo}: Unauthorized merchant recipient`);
+        }
+        if (BigInt(req.amount) > maxPerCallMicroUsdc) {
+          throw new Error(`Amount ${req.amount} exceeds max per-call cap of ${maxPerCallMicroUsdc}`);
+        }
+      });
+
       this.payingFetch = wrapFetchWithPayment(options.customFetch ?? fetch, client);
     } else {
       this.payingFetch = options?.customFetch ?? fetch;
     }
+  }
+
+  /**
+   * Free evaluation preview without wallet or x402 payment header.
+   */
+  async sanitizePreview(content: string): Promise<SanitizeResponse> {
+    const res = await fetch(`${this.baseUrl}/v1/sanitize/preview`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`CanaryGuard Preview HTTP ${res.status}: ${errText}`);
+    }
+
+    return (await res.json()) as SanitizeResponse;
   }
 
   async sanitize(options: SanitizeOptions): Promise<SanitizeResponse> {
