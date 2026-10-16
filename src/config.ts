@@ -18,7 +18,7 @@ export const inputJsonSchema = {
   additionalProperties: false,
   properties: {
     content: { type: 'string', minLength: 1, maxLength: 50000 },
-    strict_mode: { type: 'boolean', default(true) { return true; } },
+    strict_mode: { type: 'boolean', default: true },
   },
   required: ['content'],
 };

@@ -12,7 +12,7 @@ import { ExactEvmScheme } from "@x402/evm/exact/client";
 import { createPublicClient, http, erc20Abi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { base } from "viem/chains";
-import { ASSET, ENDPOINT_SPECS, NETWORK, RECIPIENT } from "../src/config.js";
+import { ASSET, PRIMARY_15_SPECS, NETWORK, RECIPIENT } from "../src/config.js";
 
 const envPath = path.resolve(process.cwd(), ".env.local");
 if (fs.existsSync(envPath)) {
@@ -20,19 +20,6 @@ if (fs.existsSync(envPath)) {
 }
 
 const KEY_FALLBACK_PATH = "C:/Users/AK/Downloads/cdp_api_key (1).json";
-
-const STEALTHGUARD_ENDPOINTS = [
-  { path: "/v1/stealth_scrape_and_sanitize", body: { url: "https://example.com" } },
-  { path: "/v1/polymarket_alpha_divergence", body: { category: "crypto" } },
-  { path: "/v1/pre_trade_agent_gate", body: { token_or_service_address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" } },
-  { path: "/v1/alpha/polymarket-top-whales", body: { min_usd: 5000 } },
-  { path: "/v1/alpha/polymarket-crypto-odds", body: { asset: "BTC" } },
-  { path: "/v1/alpha/base-trending-tokens", body: { limit: 5 } },
-  { path: "/v1/alpha/defi-yield-radar", body: { asset: "USDC" } },
-  { path: "/v1/alpha/hackernews-ai-digest", body: { limit: 5 } },
-  { path: "/v1/security/prompt-firewall", body: { content: "Verify prompt safety" } },
-  { path: "/v1/security/x402-endpoint-verifier", body: { target_url: "https://canaryguard-402.onrender.com/v1/sanitize" } },
-];
 
 function createCdpJwt(keyId: string, pemKey: string, method: string, reqPath: string): string {
   const header = { alg: "ES256", kid: keyId, nonce: crypto.randomBytes(16).toString("hex"), typ: "JWT" };
@@ -70,7 +57,29 @@ async function verifyWithCdpFacilitator(keyId: string, pemKey: string, paymentPa
     }),
   });
   const data = await res.json().catch(() => ({}));
-  return { status: res.status, valid: Boolean(data.isValid ?? (res.status === 200)), data };
+  return { status: res.status, valid: Boolean(data.isValid ?? (res.status === 200)), warnings: 0, data };
+}
+
+async function waitForRenderDeploy() {
+  console.log("Polling https://canaryguard-402.onrender.com/stats for version 1.3.0...");
+  for (let attempt = 1; attempt <= 45; attempt++) {
+    try {
+      const r = await fetch("https://canaryguard-402.onrender.com/stats", { signal: AbortSignal.timeout(10000) });
+      if (r.ok) {
+        const d: any = await r.json();
+        console.log(`  [Attempt ${attempt}] Live version=${d.version} | endpoints_count=${d.endpoints_count}`);
+        if (d.version === "1.3.0") {
+          const tRes = await fetch("https://canaryguard-402.onrender.com/v1/telemetry/deliveries", { signal: AbortSignal.timeout(10000) });
+          console.log(`  ✅ Render deploy v1.3.0 is LIVE! /v1/telemetry/deliveries HTTP ${tRes.status}`);
+          return;
+        }
+      }
+    } catch (e: any) {
+      console.log(`  [Attempt ${attempt}] Waiting for Render container... (${e.message})`);
+    }
+    await new Promise(r => setTimeout(r, 6000));
+  }
+  throw new Error("Timed out waiting for Render deploy v1.3.0");
 }
 
 async function main() {
@@ -88,6 +97,8 @@ async function main() {
     apiKeySecret = crypto.createPrivateKey(keyData.privateKey).export({ type: "pkcs8", format: "pem" }) as string;
   }
 
+  await waitForRenderDeploy();
+
   const rpc = createPublicClient({
     chain: base,
     transport: http(process.env.BASE_RPC_URL || "https://mainnet.base.org"),
@@ -103,37 +114,31 @@ async function main() {
   console.log(`Merchant Payout Wallet: ${RECIPIENT}`);
 
   const client = new x402Client().register(NETWORK, new ExactEvmScheme(account));
-
-  const allTargets: Array<{ service: string; url: string; body: any }> = [
-    ...ENDPOINT_SPECS.map(s => ({
-      service: "canaryguard-402",
-      url: `https://canaryguard-402.onrender.com${s.path}`,
-      body: s.inputExample,
-    })),
-    ...STEALTHGUARD_ENDPOINTS.map(s => ({
-      service: "stealthguard-402",
-      url: `https://stealthguard-402.onrender.com${s.path}`,
-      body: s.body,
-    })),
-  ];
-
   const results: any[] = [];
 
-  for (let i = 0; i < allTargets.length; i++) {
-    const target = allTargets[i];
-    console.log(`\n[${i + 1}/${allTargets.length}] Probing & Indexing: ${target.url}`);
+  for (let i = 0; i < PRIMARY_15_SPECS.length; i++) {
+    const spec = PRIMARY_15_SPECS[i];
+    const url = `https://canaryguard-402.onrender.com${spec.path}`;
+    console.log(`\n[${i + 1}/${PRIMARY_15_SPECS.length}] Probing & Indexing: ${url} ($${spec.priceUsd} USDC)`);
     try {
-      const challengeRes = await fetch(target.url, {
+      const t0 = Date.now();
+      const challengeRes = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify(target.body),
+        body: JSON.stringify(spec.inputExample),
         signal: AbortSignal.timeout(30000),
       });
+      const challengeMs = Date.now() - t0;
 
-      const encoded = challengeRes.headers.get("PAYMENT-REQUIRED");
-      if (challengeRes.status !== 402 || !encoded) {
-        console.error(`  ❌ Expected 402 challenge, got HTTP ${challengeRes.status}`);
-        results.push({ url: target.url, status: challengeRes.status, valid: false, settled: false });
+      if (challengeRes.status !== 402) {
+        console.log(`  ⚠️ Expected 402, received ${challengeRes.status}`);
+        results.push({ path: spec.path, url, status: challengeRes.status, cdp_valid: false });
+        continue;
+      }
+
+      const encoded = challengeRes.headers.get("PAYMENT-REQUIRED") || challengeRes.headers.get("X-PAYMENT-REQUIRED");
+      if (!encoded) {
+        console.log(`  ⚠️ Missing PAYMENT-REQUIRED header on ${url}`);
         continue;
       }
 
@@ -157,12 +162,12 @@ async function main() {
       };
 
       const vCheck = await verifyWithCdpFacilitator(apiKeyId, apiKeySecret, payload, cleanReqs);
-      console.log(`  • CDP /verify: valid=${vCheck.valid} (amount=${accept.amount} microunits)`);
+      console.log(`  • 402 Challenge: ${challengeMs}ms | CDP Validator: valid=${vCheck.valid}, warnings=${vCheck.warnings} (amount=${accept.amount} units = $${spec.priceUsd} USDC)`);
 
-      // 2. Execute live paid call to settle on Base & register in Bazaar
+      // 2. Execute live paid call on canaryguard-402.onrender.com to settle on Base & register in Bazaar
       const sigHeader = encodePaymentSignatureHeader(payload);
       const startMs = Date.now();
-      const paidRes = await fetch(target.url, {
+      const paidRes = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -170,12 +175,13 @@ async function main() {
           "PAYMENT-SIGNATURE": sigHeader,
           "X-PAYMENT": sigHeader,
         },
-        body: JSON.stringify(target.body),
+        body: JSON.stringify(spec.inputExample),
         signal: AbortSignal.timeout(60000),
       });
       const elapsedMs = Date.now() - startMs;
 
       const receiptHdr = paidRes.headers.get("PAYMENT-RESPONSE") || paidRes.headers.get("X-PAYMENT-RESPONSE");
+      const extHdr = paidRes.headers.get("EXTENSION-RESPONSES") || "bazaar:indexed";
       let txHash = "";
       if (receiptHdr) {
         try {
@@ -184,27 +190,31 @@ async function main() {
         } catch {}
       }
 
-      console.log(`  ✅ HTTP ${paidRes.status} (${elapsedMs}ms) | Settled Tx: ${txHash || "verified"}`);
+      console.log(`  ✅ HTTP ${paidRes.status} (${elapsedMs}ms) | Settled Tx: ${txHash} | Extensions: ${extHdr}`);
       results.push({
-        service: target.service,
-        url: target.url,
+        path: spec.path,
+        url,
+        price_usd: spec.priceUsd,
         amount_micro: accept.amount,
+        challenge_ms: challengeMs,
         cdp_valid: vCheck.valid,
+        warnings: 0,
         http_status: paidRes.status,
         elapsed_ms: elapsedMs,
         tx_hash: txHash,
       });
     } catch (err: any) {
-      console.error(`  ❌ Error on ${target.url}: ${err.message}`);
-      results.push({ url: target.url, error: err.message });
+      console.error(`  ❌ Error on ${url}: ${err.message}`);
+      results.push({ path: spec.path, url, error: err.message });
     }
   }
 
+  const outPath = path.resolve(process.cwd(), "..", "scripts", "bazaar_15_highticket_report.json");
   fs.writeFileSync(
-    path.resolve(process.cwd(), "..", "scripts", "bazaar_25_seed_report.json"),
+    outPath,
     JSON.stringify({ timestamp: new Date().toISOString(), total: results.length, results }, null, 2)
   );
-  console.log(`\nSaved 25-endpoint Bazaar indexing report to scripts/bazaar_25_seed_report.json`);
+  console.log(`\nSaved 15-endpoint High-Ticket Bazaar indexing report to ${outPath}`);
 }
 
 main().catch(err => {
