@@ -1,0 +1,17 @@
+{
+  "timestamp": "2026-10-16T22:15:26.812Z",
+  "service": "canaryguard-402",
+  "endpoint": "/v1/sanitize",
+  "payer": "0x6b5f275F028A214fb2e6d21061db791E3b07BEeD",
+  "recipient": "0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1",
+  "amount_usdc": 0.01,
+  "amount_micro": "10000",
+  "transaction_hash": "0x0b49ad128358a351485844a8c0bc5bf183d34105edde449ba0fd67059b1b254e",
+  "network": "base",
+  "chain_id": 8453,
+  "settlement_status": "SETTLED_ON_CHAIN",
+  "duration_ms": 1407,
+  "input_detected_threat": true,
+  "sanitizer_status": "blocked",
+  "basescan_url": "https://basescan.org/tx/0x0b49ad128358a351485844a8c0bc5bf183d34105edde449ba0fd67059b1b254e"
+}
