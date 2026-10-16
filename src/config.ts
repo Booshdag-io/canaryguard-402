@@ -6,7 +6,7 @@ export const SERVICE_VERSION = '1.3.0';
 export const ASSET = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 export const RECIPIENT = '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1';
 export const DESCRIPTION = 'Deterministic prompt-injection firewall, Base token auditor, and enterprise on-chain intelligence suite for autonomous AI agents.';
-export const TOOL_DESCRIPTION = 'Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits. Cost: 0.005 USDC on Base. Deterministic rules have incomplete coverage; results do not guarantee safety.';
+export const TOOL_DESCRIPTION = 'Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits. Cost: 0.010 USDC on Base. Deterministic rules have incomplete coverage; results do not guarantee safety.';
 
 export const Input = z.strictObject({
   content: z.string().min(1).max(50000),

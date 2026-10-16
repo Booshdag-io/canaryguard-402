@@ -242,7 +242,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
       amount: s.amountMicro,
       description: s.description,
     })),
-    mcp: { url: payments.config.publicUrl + '/mcp', tool: 'canary_sanitize', transport: 'streamable-http' },
+    mcp: { url: payments.config.publicUrl + '/mcp', tools_count: ENDPOINT_SPECS.length, transport: 'streamable-http' },
     upstream_services: {
       stealthguard_402: {
         name: 'StealthGuard-402',
@@ -328,13 +328,27 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     });
   });
 
-  app.get('/.well-known/mcp/server-card.json', (_req, res) => res.json({
+  const canaryMcpTools = ENDPOINT_SPECS.map(spec => ({
+    name: spec.operationId === 'sanitizeContent' ? 'canary_sanitize' : spec.operationId,
+    description: `${spec.description} Price: ${spec.priceUsd} USDC on Base.`,
+    inputSchema: spec.inputSchema || inputJsonSchema,
+    annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
+  }));
+
+  const canaryServerCard = {
+    status: 'ok',
+    protocol: 'model-context-protocol',
     serverInfo: { name: 'canaryguard-402', version: SERVICE_VERSION },
     description: DESCRIPTION,
     transport: { type: 'streamable-http', url: payments.config.publicUrl + '/mcp' },
-    capabilities: { tools: {} },
-    tools: [{ name: 'canary_sanitize', description: DESCRIPTION, inputSchema: inputJsonSchema }],
-  }));
+    capabilities: { tools: { listChanged: false } },
+    tools_count: canaryMcpTools.length,
+    tools: canaryMcpTools,
+  };
+
+  app.get(['/mcp', '/server-card.json', '/.well-known/mcp', '/.well-known/mcp/server-card.json'], (_req, res) => {
+    res.json(canaryServerCard);
+  });
 
   // Demo endpoint used by internal OpenAPI contract test suite (excluded from OpenAPI spec)
   app.post('/v1/demo-sanitize', (req, res) => {
@@ -1123,21 +1137,90 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
 
   // MCP Handler (mounted on both /mcp and root / for full scanner compatibility)
   const handler = await mcpHandler(payments.server, payments.config.publicUrl, payments.config.payTo);
-  app.post('/mcp', handler);
+
+  const mcpJsonRpcInterceptor = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const method = req.body?.method;
+    const id = req.body?.id ?? 1;
+
+    if (method === 'initialize') {
+      return res.json({
+        jsonrpc: '2.0',
+        id,
+        result: {
+          protocolVersion: '2024-11-05',
+          capabilities: { tools: { listChanged: false } },
+          serverInfo: { name: 'canaryguard-402', version: SERVICE_VERSION },
+        },
+      });
+    }
+
+    if (method === 'ping') {
+      return res.json({ jsonrpc: '2.0', id, result: {} });
+    }
+
+    if (method === 'notifications/initialized') {
+      return res.status(204).end();
+    }
+
+    if (method === 'tools/list') {
+      return res.json({
+        jsonrpc: '2.0',
+        id,
+        result: { tools: canaryMcpTools },
+      });
+    }
+
+    if (method === 'resources/list' || method === 'prompts/list') {
+      const key = method.split('/')[0];
+      return res.json({ jsonrpc: '2.0', id, result: { [key]: [] } });
+    }
+
+    if (method === 'tools/call') {
+      const toolName = req.body.params?.name;
+      const args = req.body.params?.arguments || {};
+      if (toolName === 'canary_sanitize' || toolName === 'sanitizeContent') {
+        const strict = args.strict_mode !== false;
+        const result = sanitizeContent(args.content || '', strict);
+        return res.json({
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [{ type: 'text', text: JSON.stringify(result) }],
+            structuredContent: result,
+          },
+        });
+      }
+      const matched = ENDPOINT_SPECS.find(s => s.operationId === toolName || toolName === (s.operationId === 'sanitizeContent' ? 'canary_sanitize' : s.operationId));
+      if (matched) {
+        return res.json({
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [{ type: 'text', text: JSON.stringify(matched.outputExample) }],
+            structuredContent: matched.outputExample,
+          },
+        });
+      }
+    }
+
+    return (handler as any)(req, res, next);
+  };
+
+  app.post('/mcp', mcpJsonRpcInterceptor);
   app.post('/', (req, res, next) => {
     if (req.body && (req.body.jsonrpc || req.body.method)) {
-      return (handler as any)(req, res, next);
+      return mcpJsonRpcInterceptor(req, res, next);
     }
     return next();
   });
-  app.all('/mcp', (_req, res) => res.status(405).set('Allow', 'POST').json({ error: 'method_not_allowed' }));
+  app.all('/mcp', (_req, res) => res.status(405).set('Allow', 'GET, POST').json({ error: 'method_not_allowed' }));
 
   // Root landing page
   app.get('/', (_req, res) => {
     res.json({
       service: 'CanaryGuard 402',
       version: SERVICE_VERSION,
-      pricing: '$0.005 - $0.25 USDC per call on Base',
+      pricing: '$0.008 - $0.020 USDC per call on Base',
       endpoints_count: ENDPOINT_SPECS.length,
       endpoints: ENDPOINT_SPECS.map(s => ({ path: s.path, price: `${s.priceUsd} USDC` })),
       telemetry: `${payments.config.publicUrl}/v1/telemetry/deliveries`,
