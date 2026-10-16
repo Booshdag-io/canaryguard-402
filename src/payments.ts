@@ -57,5 +57,5 @@ export async function createPayments(env = process.env, provided?: FacilitatorCl
   const httpServer = new x402HTTPResourceServer(server, routesConfig);
   await httpServer.initialize();
   const gate = paymentMiddlewareFromHTTPServer(httpServer, undefined, undefined, false);
-  return { server, config, gate, discovery: primaryDiscovery };
+  return { server, facilitator, config, gate, discovery: primaryDiscovery };
 }

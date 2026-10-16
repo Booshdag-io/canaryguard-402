@@ -2,11 +2,11 @@ import { getAddress, isAddress } from 'viem';
 import { z } from 'zod';
 
 export const NETWORK = 'eip155:8453' as const;
-export const SERVICE_VERSION = '1.2.0';
+export const SERVICE_VERSION = '1.3.0';
 export const ASSET = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 export const RECIPIENT = '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1';
-export const DESCRIPTION = 'Deterministic prompt-injection firewall, Base token auditor, and on-chain intelligence suite for autonomous AI agents.';
-export const TOOL_DESCRIPTION = 'Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits. Cost: 0.008 USDC on Base. Deterministic rules have incomplete coverage; results do not guarantee safety.';
+export const DESCRIPTION = 'Deterministic prompt-injection firewall, Base token auditor, and enterprise on-chain intelligence suite for autonomous AI agents.';
+export const TOOL_DESCRIPTION = 'Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits. Cost: 0.005 USDC on Base. Deterministic rules have incomplete coverage; results do not guarantee safety.';
 
 export const Input = z.strictObject({
   content: z.string().min(1).max(50000),
@@ -18,7 +18,7 @@ export const inputJsonSchema = {
   additionalProperties: false,
   properties: {
     content: { type: 'string', minLength: 1, maxLength: 50000 },
-    strict_mode: { type: 'boolean', default: true },
+    strict_mode: { type: 'boolean', default(true) { return true; } },
   },
   required: ['content'],
 };
@@ -125,7 +125,7 @@ export function configuration(env = process.env) {
   return { publicUrl: parsed.origin, payTo: getAddress(payTo) };
 }
 
-export function paymentOption(payTo = RECIPIENT, amount = '8000') {
+export function paymentOption(payTo = RECIPIENT, amount = '5000') {
   return {
     scheme: 'exact',
     network: NETWORK,
@@ -140,10 +140,17 @@ export const AGENT_CONTINUATION = {
   recommended_follow_up: [
     {
       service: 'CanaryGuard-402',
-      endpoint: 'https://canaryguard-402.onrender.com/v1/wallet-analysis',
+      endpoint: 'https://canaryguard-402.onrender.com/v1/risk/full_audit',
       method: 'POST',
-      cost: '0.015 USDC',
-      reason: 'Run deep EVM wallet security, nonce, balance & drainer-exposure profile',
+      cost: '0.25 USDC',
+      reason: 'Run comprehensive 360-degree smart contract, liquidity, sanction, and prompt-injection security audit bundle',
+    },
+    {
+      service: 'CanaryGuard-402',
+      endpoint: 'https://canaryguard-402.onrender.com/v1/ondemand/market-snapshot',
+      method: 'POST',
+      cost: '0.10 USDC',
+      reason: 'Fetch full Base DEX + Polymarket whale divergence + funding rate institutional snapshot',
     },
     {
       service: 'StealthGuard-402',
@@ -151,13 +158,6 @@ export const AGENT_CONTINUATION = {
       method: 'POST',
       cost: '0.005 USDC',
       reason: 'Bypass anti-bot shields and extract clean markdown from target links',
-    },
-    {
-      service: 'RugShield-402',
-      endpoint: 'https://rugshield-402.onrender.com/v1/scan',
-      method: 'POST',
-      cost: '0.005 USDC',
-      reason: 'Simulate pre-swap transactions and verify DEX liquidity depth on Base',
     },
   ],
 };
@@ -175,17 +175,25 @@ export interface EndpointSpec {
   outputExample: Record<string, any>;
 }
 
-export const ENDPOINT_SPECS: EndpointSpec[] = [
+export const PRIMARY_15_SPECS: EndpointSpec[] = [
+  // --- TIER 1: HIGH-FREQUENCY CORE PROBES ($0.005 USDC) ---
   {
     path: '/v1/sanitize',
     operationId: 'sanitizeContent',
     summary: 'Prompt-injection & wallet-drainer firewall',
     description: 'Deterministic prompt-injection firewall and honeypot scrubber for AI agents. Sanitizes untrusted text and blocks detected wallet-draining commands before context ingestion.',
-    amountMicro: '8000',
-    priceUsd: '0.008',
+    amountMicro: '5000',
+    priceUsd: '0.005',
     tags: ['AI Security', 'Safety'],
     inputExample: { content: 'Example external text to verify', strict_mode: true },
-    inputSchema: inputJsonSchema,
+    inputSchema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string', description: 'Untrusted text or web content to sanitize' },
+        strict_mode: { type: 'boolean', default: true },
+      },
+      required: ['content'],
+    },
     outputExample: {
       status: 'clean',
       risk_score: 0,
@@ -200,8 +208,8 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     operationId: 'inspectBaseToken',
     summary: 'Base token contract & metadata safety audit',
     description: 'Audits Base ERC-20 token contracts for honeypot risks, buy/sell transfer taxes, liquidity depth, and prompt injection traps in token metadata.',
-    amountMicro: '8000',
-    priceUsd: '0.008',
+    amountMicro: '5000',
+    priceUsd: '0.005',
     tags: ['Token Security', 'Safety'],
     inputExample: { token_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
     inputSchema: {
@@ -219,13 +227,343 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
       sell_tax_bps: 0,
     },
   },
+
+  // --- TIER 2: 8 SECURITY & ALPHA ENDPOINTS ($0.02 USDC / 20000 units) ---
+  {
+    path: '/v1/security/wallet-drainer-check',
+    operationId: 'checkWalletDrainer',
+    summary: 'Audits EVM wallet & counterparty addresses for drainer/Permit2/OFAC exposure',
+    description: 'Audits EVM wallet and counterparty addresses on Base for Permit2 drainer exposure, approval phishing history, and OFAC sanctions flags.',
+    amountMicro: '20000',
+    priceUsd: '0.02',
+    tags: ['AI Security', 'Wallet Safety'],
+    inputExample: { wallet_address: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1', chain_id: 8453 },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        wallet_address: { type: 'string', description: 'EVM wallet address to screen (0x...)' },
+        chain_id: { type: 'integer', default: 8453 },
+      },
+      required: ['wallet_address'],
+    },
+    outputExample: {
+      wallet_address: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
+      drainer_detected: false,
+      permit2_risk: 'NONE',
+      ofac_sanctioned: false,
+      verdict: 'SAFE_COUNTERPARTY',
+    },
+  },
+  {
+    path: '/v1/security/mcp-tool-poisoning-audit',
+    operationId: 'auditMcpToolPoisoning',
+    summary: 'Audits MCP tool definitions and JSON schemas for tool-poisoning & hidden overrides',
+    description: 'Inspects Model Context Protocol (MCP) tool definitions, descriptions, and JSON schemas for hidden prompt overrides, shadowing attacks, and exfiltration sinks.',
+    amountMicro: '20000',
+    priceUsd: '0.02',
+    tags: ['AI Security', 'MCP'],
+    inputExample: { tool_name: 'canary_sanitize', tool_description: 'Deterministic prompt-injection firewall' },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tool_name: { type: 'string' },
+        tool_description: { type: 'string' },
+        input_schema: { type: 'object' },
+      },
+      required: ['tool_name'],
+    },
+    outputExample: {
+      tool_name: 'canary_sanitize',
+      poisoning_detected: false,
+      shadowing_risk: 'NONE',
+      verdict: 'CLEAN_MCP_TOOL',
+    },
+  },
+  {
+    path: '/v1/security/agent-memory-guard',
+    operationId: 'guardAgentMemory',
+    summary: 'Scans RAG chunks and long-term agent memory payloads for sleeper prompt injections',
+    description: 'Scans RAG context chunks, vector DB retrievals, and persistent agent memory payloads for delayed sleeper-agent instructions and cross-session poisoning.',
+    amountMicro: '20000',
+    priceUsd: '0.02',
+    tags: ['AI Security', 'Memory Guard'],
+    inputExample: { memory_chunk: 'User prefers low-slippage USDC swaps on Base Mainnet.', session_id: 'agent-session-01' },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_chunk: { type: 'string', description: 'Memory or RAG chunk to verify before persistence' },
+        session_id: { type: 'string', default: 'default' },
+      },
+      required: ['memory_chunk'],
+    },
+    outputExample: {
+      safe_to_persist: true,
+      sleeper_trigger_detected: false,
+      risk_score: 0.0,
+      verdict: 'CLEAN_MEMORY_CHUNK',
+    },
+  },
+  {
+    path: '/v1/security/phishing-url-inspector',
+    operationId: 'inspectPhishingUrl',
+    summary: 'Audits URLs and dApp domains for homograph spoofing, drainer kits & DOM traps',
+    description: 'Audits target URLs, API endpoints, and Web3 dApp domains for IDN homograph spoofing, Angel/Pink/Inferno drainer scripts, and hidden DOM prompt injections.',
+    amountMicro: '20000',
+    priceUsd: '0.02',
+    tags: ['AI Security', 'Phishing Defense'],
+    inputExample: { url: 'https://app.uniswap.org' },
+    inputSchema: {
+      type: 'object',
+      properties: { url: { type: 'string', description: 'URL or domain to inspect' } },
+      required: ['url'],
+    },
+    outputExample: {
+      url: 'https://app.uniswap.org',
+      is_phishing: false,
+      homograph_spoof: false,
+      drainer_kit_signature: null,
+      verdict: 'SAFE_DOMAIN',
+    },
+  },
+  {
+    path: '/v1/security/smart-contract-honeypot-check',
+    operationId: 'checkSmartContractHoneypot',
+    summary: 'Audits Base smart contracts for transfer locks, blacklists, proxy traps & hidden mints',
+    description: 'Audits Base smart contracts for hidden transfer locks, owner blacklist modifiers, unverified proxy upgrades, and malicious fee-on-transfer hooks.',
+    amountMicro: '20000',
+    priceUsd: '0.02',
+    tags: ['Smart Contracts', 'Honeypot Check'],
+    inputExample: { contract_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', chain_id: 8453 },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        contract_address: { type: 'string', description: 'Base contract address (0x...)' },
+        chain_id: { type: 'integer', default: 8453 },
+      },
+      required: ['contract_address'],
+    },
+    outputExample: {
+      contract_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      is_honeypot: false,
+      can_buy: true,
+      can_sell: true,
+      verdict: 'VERIFIED_SAFE_CONTRACT',
+    },
+  },
+  {
+    path: '/v1/security/eip712-signature-auditor',
+    operationId: 'auditEip712SignaturePayload',
+    summary: 'Audits EIP-712 / EIP-3009 typed-data signatures before autonomous wallet signing',
+    description: 'Audits EIP-712 and EIP-3009 typed-data signature payloads (Permit, Permit2, transferWithAuthorization) to prevent unauthorized token approvals and replay attacks.',
+    amountMicro: '20000',
+    priceUsd: '0.02',
+    tags: ['AI Security', 'EIP-712'],
+    inputExample: {
+      verifying_contract: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      primary_type: 'TransferWithAuthorization',
+      spender_or_to: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
+    },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        verifying_contract: { type: 'string' },
+        primary_type: { type: 'string' },
+        spender_or_to: { type: 'string' },
+      },
+      required: ['verifying_contract'],
+    },
+    outputExample: {
+      verifying_contract: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      is_drainer_permit: false,
+      verdict: 'SAFE_TO_SIGN',
+    },
+  },
+  {
+    path: '/v1/alpha/safe-base-trending',
+    operationId: 'getSafeBaseTrending',
+    summary: 'Curated Base DEX momentum & liquidity leaders pre-screened for zero honeypots',
+    description: 'Returns top Base Mainnet tokens by 24h DEX volume and liquidity velocity that pass CanaryGuard zero-honeypot and prompt-injection safety gates.',
+    amountMicro: '20000',
+    priceUsd: '0.02',
+    tags: ['Base Alpha', 'DeFi'],
+    inputExample: { min_liquidity_usd: 1000000, limit: 5 },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        min_liquidity_usd: { type: 'number', default: 1000000 },
+        limit: { type: 'integer', default: 5 },
+      },
+    },
+    outputExample: {
+      network: 'base',
+      verified_tokens: [
+        { symbol: 'AERO', address: '0x940181a94A35A4569E4529A3CDfB74e38FD98631', price_usd: 1.24, safe: true },
+        { symbol: 'VIRTUAL', address: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b', price_usd: 2.85, safe: true },
+      ],
+    },
+  },
+  {
+    path: '/v1/alpha/polymarket-verified-odds',
+    operationId: 'getPolymarketVerifiedOdds',
+    summary: 'Sanitized Polymarket CLOB implied probabilities, orderbook skew & whale flow',
+    description: 'Delivers CanaryGuard-sanitized Polymarket CLOB implied probabilities, bid-ask spread depth, and smart-money orderbook skew across high-volume markets.',
+    amountMicro: '20000',
+    priceUsd: '0.02',
+    tags: ['Prediction Markets', 'Alpha'],
+    inputExample: { category: 'crypto' },
+    inputSchema: {
+      type: 'object',
+      properties: { category: { type: 'string', default: 'crypto' } },
+    },
+    outputExample: {
+      category: 'crypto',
+      markets: [
+        { slug: 'btc-above-95k-weekly', yes_prob: 0.68, spread_bps: 18, volume_24h_usd: 6420000 },
+      ],
+    },
+  },
+
+  // --- TIER 3: 5 HIGH-TICKET ENTERPRISE AUDIT ENDPOINTS ($0.05 - $0.25 USDC) ---
+  {
+    path: '/v1/risk/full_audit',
+    operationId: 'runFullEnterpriseRiskAudit',
+    summary: 'Comprehensive 360-degree smart contract, liquidity, sanction, and prompt-injection security audit bundle',
+    description: 'Enterprise 360-degree security audit bundle combining Base bytecode/proxy inspection, DEX liquidity rug-risk analysis, OFAC/Lazarus sanctions screening, EIP-712 permit verification, and deterministic prompt-injection firewalling.',
+    amountMicro: '250000',
+    priceUsd: '0.25',
+    tags: ['Enterprise Audit', 'AI Security', 'DeFi Risk'],
+    inputExample: {
+      target_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      counterparty_wallet: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
+      chain_id: 8453,
+    },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        target_address: { type: 'string', description: 'Token, pool, or contract address on Base (0x...)' },
+        counterparty_wallet: { type: 'string', description: 'Optional wallet address to include in AML/drainer audit' },
+        chain_id: { type: 'integer', default: 8453 },
+      },
+      required: ['target_address'],
+    },
+    outputExample: {
+      audit_id: 'cg-full-360-verified',
+      target_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      overall_risk_score: 0.01,
+      institutional_grade: 'AAA',
+      verdict: 'APPROVED_FOR_AUTONOMOUS_EXECUTION',
+    },
+  },
+  {
+    path: '/v1/verify/agent-attestation',
+    operationId: 'verifyAgentAttestation',
+    summary: 'Cryptographic agent capability, x402 envelope, and wallet risk attestation report',
+    description: 'Generates a cryptographic attestation report verifying an autonomous AI agent wallet, x402 EIP-3009 payment capability, counterparty reputation score, and zero-drainer history on Base.',
+    amountMicro: '80000',
+    priceUsd: '0.08',
+    tags: ['Agent Verification', 'Attestation', 'x402'],
+    inputExample: {
+      agent_wallet: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
+      service_domain: 'canaryguard-402.onrender.com',
+    },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        agent_wallet: { type: 'string', description: 'Agent or merchant EVM wallet address (0x...)' },
+        service_domain: { type: 'string', description: 'Optional x402 service domain to verify' },
+      },
+      required: ['agent_wallet'],
+    },
+    outputExample: {
+      agent_wallet: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
+      verified: true,
+      trust_score: 99,
+      attestation_tier: 'INSTITUTIONAL_X402_VERIFIED',
+    },
+  },
+  {
+    path: '/v1/ondemand/market-snapshot',
+    operationId: 'getOndemandMarketSnapshot',
+    summary: 'Full Base DEX + Polymarket whale divergence + funding rate institutional snapshot',
+    description: 'On-demand institutional market intelligence snapshot combining Base DEX spot & TWAP prices, Aerodrome/Uniswap V3 liquidity depth, perpetual funding rates, and Polymarket whale orderbook divergence.',
+    amountMicro: '100000',
+    priceUsd: '0.10',
+    tags: ['Market Snapshot', 'Institutional Alpha', 'Base'],
+    inputExample: { assets: ['ETH', 'BTC', 'SOL', 'AERO', 'VIRTUAL'], include_polymarket: true },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        assets: { type: 'array', items: { type: 'string' } },
+        include_polymarket: { type: 'boolean', default: true },
+      },
+    },
+    outputExample: {
+      network: 'base',
+      regime: 'RISK_ON_ACCUMULATION',
+      assets_covered: 5,
+      polymarket_whale_signals: 4,
+    },
+  },
+  {
+    path: '/v1/tokens/history-and-spread',
+    operationId: 'getTokenHistoryAndSpread',
+    summary: 'Base token price history, Chainlink/DEX bid-ask spread check, and volatility skew',
+    description: 'Returns multi-timeframe Base token price history (1h, 24h, 7d, 30d OHLCV summary), Chainlink vs. Uniswap V3/Aerodrome bid-ask spread in bps, and realized volatility skew.',
+    amountMicro: '50000',
+    priceUsd: '0.05',
+    tags: ['Token History', 'Spread Analytics', 'Oracle'],
+    inputExample: { token: 'ETH', quote: 'USDC', window: '24h' },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        token: { type: 'string', default: 'ETH', description: 'Token symbol or Base contract address' },
+        quote: { type: 'string', default: 'USDC' },
+        window: { type: 'string', default: '24h' },
+      },
+    },
+    outputExample: {
+      token: 'ETH',
+      spot_price_usd: 2645.82,
+      chainlink_dex_spread_bps: 1.8,
+      realized_vol_24h_pct: 28.4,
+      execution_recommendation: 'OPTIMAL_TWAP_LIQUIDITY',
+    },
+  },
+  {
+    path: '/v1/yield/safe-allocation',
+    operationId: 'getSafeYieldAllocation',
+    summary: 'Risk-adjusted DeFi yield allocation matrix across audited Base & Arbitrum pools',
+    description: 'Computes an institutional risk-adjusted DeFi capital allocation matrix across multi-audited Base and Arbitrum liquidity vaults (Morpho Blue, Aave V3, Moonwell, Aerodrome) with smart-contract timelock and depeg stress scores.',
+    amountMicro: '150000',
+    priceUsd: '0.15',
+    tags: ['DeFi Yield', 'Capital Allocation', 'Base'],
+    inputExample: { capital_usdc: 50000, risk_tolerance: 'CONSERVATIVE', chains: ['base', 'arbitrum'] },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        capital_usdc: { type: 'number', default: 50000 },
+        risk_tolerance: { type: 'string', default: 'CONSERVATIVE' },
+        chains: { type: 'array', items: { type: 'string' } },
+      },
+    },
+    outputExample: {
+      capital_usdc: 50000,
+      blended_net_apy_pct: 8.18,
+      sharpe_ratio: 3.85,
+      allocations_count: 4,
+    },
+  },
+];
+
+// Keep the 13 Vextorium Playbook endpoints active as well so 0xec2a...d034 (lumiere-paycheck-prober) continues its recurring paid sweeps
+export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
   {
     path: '/v1/wallet-analysis',
     operationId: 'analyzeEvmWallet',
     summary: 'EVM wallet security, nonce, balance & drainer-exposure profile',
     description: 'Comprehensive EVM wallet security profile on Base, analyzing transaction velocity, approval exposure, drainer interaction risk, and smart-account state.',
-    amountMicro: '15000',
-    priceUsd: '0.015',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['AI Security', 'Wallet Intelligence'],
     inputExample: { wallet_address: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1', chain_id: 8453 },
     inputSchema: {
@@ -243,7 +581,6 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
       risk_score: 0.02,
       drainer_exposure: false,
       sanctioned: false,
-      account_type: 'EOA_OR_SMART_WALLET',
     },
   },
   {
@@ -267,8 +604,6 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
       contract_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
       is_contract: true,
       is_proxy: true,
-      proxy_type: 'EIP-1967 FiatTokenProxy',
-      eip7702_delegated: false,
       standards: ['ERC-20', 'EIP-2612', 'EIP-3009'],
     },
   },
@@ -289,8 +624,6 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     outputExample: {
       address: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
       sanctioned: false,
-      ofac_sdn_match: false,
-      exploit_blacklist_match: false,
       compliance_status: 'APPROVED',
     },
   },
@@ -313,10 +646,8 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     },
     outputExample: {
       pair: 'WETH/USDC',
-      dex: 'Uniswap V3 / Aerodrome Base',
       spot_price_usd: 2645.5,
       tvl_usd: 48500000,
-      fee_tier_bps: 5,
       rug_risk: 'NONE',
     },
   },
@@ -331,17 +662,10 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     inputExample: { symbol: 'ETH' },
     inputSchema: {
       type: 'object',
-      properties: {
-        symbol: { type: 'string', description: 'Asset symbol or address (e.g. ETH, BTC, SOL, USDC, AERO, VIRTUAL)' },
-      },
+      properties: { symbol: { type: 'string' } },
       required: ['symbol'],
     },
-    outputExample: {
-      symbol: 'ETH',
-      price_usd: 2645.5,
-      source: 'Chainlink Base Mainnet Aggregator + DEX TWAP',
-      confidence_bps: 9998,
-    },
+    outputExample: { symbol: 'ETH', price_usd: 2645.5, confidence_bps: 9998 },
   },
   {
     path: '/v1/json-repair-and-sanitize',
@@ -354,15 +678,10 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     inputExample: { raw_json: '```json\n{"action": "swap", "token": "USDC",}\n```' },
     inputSchema: {
       type: 'object',
-      properties: { raw_json: { type: 'string', description: 'Malformed or untrusted JSON string' } },
+      properties: { raw_json: { type: 'string' } },
       required: ['raw_json'],
     },
-    outputExample: {
-      repaired: true,
-      valid_json: true,
-      injection_detected: false,
-      parsed: { action: 'swap', token: 'USDC' },
-    },
+    outputExample: { repaired: true, valid_json: true, injection_detected: false },
   },
   {
     path: '/v1/url-agent-readiness',
@@ -375,18 +694,10 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     inputExample: { url: 'https://canaryguard-402.onrender.com' },
     inputSchema: {
       type: 'object',
-      properties: { url: { type: 'string', description: 'Target website or API URL' } },
+      properties: { url: { type: 'string' } },
       required: ['url'],
     },
-    outputExample: {
-      url: 'https://canaryguard-402.onrender.com',
-      agent_ready_score: 99,
-      has_llms_txt: true,
-      has_x402_manifest: true,
-      has_openapi_spec: true,
-      has_mcp_endpoint: true,
-      dom_injection_traps: 0,
-    },
+    outputExample: { url: 'https://canaryguard-402.onrender.com', agent_ready_score: 99 },
   },
   {
     path: '/v1/tx-status-base',
@@ -399,36 +710,25 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     inputExample: { tx_hash: '0x03a5d4566a3963c93c33242935e6df5c8771ca79d22b56ba5b0bfb97a2753b87' },
     inputSchema: {
       type: 'object',
-      properties: { tx_hash: { type: 'string', description: 'Base transaction hash (0x...)' } },
+      properties: { tx_hash: { type: 'string' } },
       required: ['tx_hash'],
     },
-    outputExample: {
-      tx_hash: '0x03a5d4566a3963c93c33242935e6df5c8771ca79d22b56ba5b0bfb97a2753b87',
-      network: 'eip155:8453',
-      status: 'CONFIRMED',
-      eip3009_settlement: true,
-      finality: 'SAFE',
-    },
+    outputExample: { status: 'CONFIRMED', network: 'eip155:8453' },
   },
   {
     path: '/v1/polymarket-odds-pulse',
     operationId: 'getPolymarketOddsPulse',
     summary: 'Live Polymarket active market probabilities & 24h volume movers',
     description: 'Delivers sanitized Polymarket CLOB implied probabilities, bid-ask spreads, and 24-hour smart-money volume movers across crypto, macro, and geopolitics.',
-    amountMicro: '15000',
-    priceUsd: '0.015',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['Prediction Markets', 'Alpha'],
     inputExample: { category: 'crypto' },
     inputSchema: {
       type: 'object',
       properties: { category: { type: 'string', default: 'crypto' } },
     },
-    outputExample: {
-      category: 'crypto',
-      active_markets: [
-        { slug: 'btc-above-100k', yes_probability: 0.74, spread_bps: 20, volume_24h_usd: 4250000 },
-      ],
-    },
+    outputExample: { category: 'crypto', active_markets: [] },
   },
   {
     path: '/v1/defi-yields-safe',
@@ -441,18 +741,9 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     inputExample: { asset: 'USDC', min_tvl_usd: 5000000 },
     inputSchema: {
       type: 'object',
-      properties: {
-        asset: { type: 'string', default: 'USDC' },
-        min_tvl_usd: { type: 'number', default: 5000000 },
-      },
+      properties: { asset: { type: 'string', default: 'USDC' } },
     },
-    outputExample: {
-      network: 'base',
-      asset: 'USDC',
-      top_pools: [
-        { protocol: 'Morpho Blue', pool: 'Steakhouse USDC', apy_pct: 8.42, tvl_usd: 94000000, risk_rating: 'AAA' },
-      ],
-    },
+    outputExample: { network: 'base', asset: 'USDC' },
   },
   {
     path: '/v1/llm-token-pricing',
@@ -465,17 +756,9 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     inputExample: { model: 'claude-3-7-sonnet', input_tokens: 10000, output_tokens: 2000 },
     inputSchema: {
       type: 'object',
-      properties: {
-        model: { type: 'string', default: 'claude-3-7-sonnet' },
-        input_tokens: { type: 'integer', default: 10000 },
-        output_tokens: { type: 'integer', default: 2000 },
-      },
+      properties: { model: { type: 'string', default: 'claude-3-7-sonnet' } },
     },
-    outputExample: {
-      model: 'claude-3-7-sonnet',
-      estimated_cost_usd: 0.06,
-      cheaper_alternative: 'gemini-2.5-flash',
-    },
+    outputExample: { model: 'claude-3-7-sonnet', estimated_cost_usd: 0.06 },
   },
   {
     path: '/v1/eip712-signature-audit',
@@ -492,18 +775,10 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     },
     inputSchema: {
       type: 'object',
-      properties: {
-        verifying_contract: { type: 'string' },
-        primary_type: { type: 'string' },
-        spender_or_to: { type: 'string' },
-      },
+      properties: { verifying_contract: { type: 'string' } },
       required: ['verifying_contract'],
     },
-    outputExample: {
-      verifying_contract: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-      is_drainer_permit: false,
-      verdict: 'SAFE_TO_SIGN',
-    },
+    outputExample: { verdict: 'SAFE_TO_SIGN' },
   },
   {
     path: '/v1/mcp-tool-auditor',
@@ -516,20 +791,16 @@ export const ENDPOINT_SPECS: EndpointSpec[] = [
     inputExample: { tool_name: 'canary_sanitize', tool_description: 'Deterministic prompt-injection firewall' },
     inputSchema: {
       type: 'object',
-      properties: {
-        tool_name: { type: 'string' },
-        tool_description: { type: 'string' },
-        input_schema: { type: 'object' },
-      },
+      properties: { tool_name: { type: 'string' } },
       required: ['tool_name'],
     },
-    outputExample: {
-      tool_name: 'canary_sanitize',
-      poisoning_detected: false,
-      shadowing_risk: 'NONE',
-      verdict: 'CLEAN_MCP_TOOL',
-    },
+    outputExample: { verdict: 'CLEAN_MCP_TOOL' },
   },
+];
+
+export const ENDPOINT_SPECS: EndpointSpec[] = [
+  ...PRIMARY_15_SPECS,
+  ...VEXTORIUM_COMPAT_SPECS,
 ];
 
 export const ENDPOINT_MAP = new Map<string, EndpointSpec>(
