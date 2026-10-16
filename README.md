@@ -8,9 +8,10 @@
 [![AgentKit Plugin](https://img.shields.io/npm/v/@kurox_real/agentkit-canaryguard-402?label=AgentKit%20Action&color=crimson)](https://www.npmjs.com/package/@kurox_real/agentkit-canaryguard-402)
 [![Client SDK](https://img.shields.io/npm/v/@kurox_real/canaryguard-client?label=TS%20SDK&color=teal)](https://www.npmjs.com/package/@kurox_real/canaryguard-client)
 
-Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI agents. `POST /v1/sanitize` costs **0.003 USDC** on Base mainnet through the Coinbase CDP x402 facilitator. A remote MCP tool exposes the same inspection with payment per tool call, and flat-rate monthly fiat subscriptions are supported via MCPize.
+Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI agents. `POST /v1/sanitize` costs **0.010 USDC** on Base mainnet through the Coinbase CDP x402 facilitator. A free public evaluation endpoint is available at `POST /v1/sanitize/preview`. A remote MCP tool exposes the same inspection with payment per tool call, and flat-rate monthly fiat subscriptions are supported via MCPize.
 
 - 🌐 **Live Web Playground**: [canaryguard-402.onrender.com](https://canaryguard-402.onrender.com)
+- 🔍 **Free Evaluation Preview**: [canaryguard-402.onrender.com/v1/sanitize/preview](https://canaryguard-402.onrender.com/v1/sanitize/preview)
 - 🤖 **Agent Discovery**: [canaryguard-402.onrender.com/llms.txt](https://canaryguard-402.onrender.com/llms.txt)
 - 📦 **NPM Packages**:
   - `@kurox_real/plugin-canaryguard` — Official ElizaOS Plugin
@@ -101,7 +102,7 @@ For autonomous AI agents and trading bots requiring live web scraping through Cl
 | Base chain ID | `8453` |
 | x402 v2 network | `eip155:8453` |
 | Base USDC asset | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| Amount | `3000` micro-USDC = `0.003` USDC |
+| Amount | `10000` micro-USDC = `0.010` USDC |
 | Intended public origin | `https://canaryguard-402.onrender.com` |
 | GitHub repository | `https://github.com/ak10082247-max/canaryguard-402` |
 
@@ -149,9 +150,10 @@ For a local unpaid transport check without credentials, run `node --import tsx s
 | Route | Method | Payment |
 | --- | --- | --- |
 | `/health` | GET | Free |
+| `/v1/sanitize/preview` | GET, POST | Free (Instant evaluation without wallet) |
 | `/.well-known/x402.json` | GET | Free discovery metadata |
 | `/.well-known/mcp/server-card.json` | GET | Free MCP capability metadata |
-| `/v1/sanitize` | POST | 0.003 USDC |
+| `/v1/sanitize` | POST, GET | 0.010 USDC |
 | `/mcp` | POST | Free handshake and tool listing; paid `canary_sanitize` calls |
 
 Input must be an object with `content` (1–50,000 characters), optional boolean `strict_mode` (default `true`), and no additional fields. The JSON transport limit is 256 KiB. The service imposes a 120-request-per-minute limit per client IP; `/health` is excluded.

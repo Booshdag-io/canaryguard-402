@@ -1,10 +1,10 @@
-export function sendRevenueAlert(payer: string, tx?: string) {
+export function sendRevenueAlert(payer: string, tx?: string, amountUsd = '0.010') {
   const tgToken = process.env.TELEGRAM_BOT_TOKEN;
   const tgChat = process.env.TELEGRAM_CHAT_ID;
   if (tgToken && tgChat) {
     const txLink = tx ? `<a href="https://basescan.org/tx/${tx}">View on BaseScan</a>` : 'N/A';
     const text = `💰 <b>CanaryGuard 402 Settlement!</b>\n` +
-      `Amount: <b>0.003 USDC</b> on Base\n` +
+      `Amount: <b>${amountUsd} USDC</b> on Base\n` +
       `Payer: <code>${payer}</code>\n` +
       `Tx: ${txLink}`;
     try {
@@ -28,8 +28,8 @@ export function sendRevenueAlert(payer: string, tx?: string) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          content: `💰 **CanaryGuard 402 Settlement**\nAmount: **0.003 USDC**\nPayer: \`${payer}\`\nTx: https://basescan.org/tx/${tx}`,
-          text: `💰 CanaryGuard 402 Settlement: 0.003 USDC from ${payer} | https://basescan.org/tx/${tx}`,
+          content: `💰 **CanaryGuard 402 Settlement**\nAmount: **${amountUsd} USDC**\nPayer: \`${payer}\`\nTx: https://basescan.org/tx/${tx}`,
+          text: `💰 CanaryGuard 402 Settlement: ${amountUsd} USDC from ${payer} | https://basescan.org/tx/${tx}`,
         }),
       }).catch(() => {});
     } catch {}

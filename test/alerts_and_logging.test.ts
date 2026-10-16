@@ -131,7 +131,7 @@ function fakePayment(challenge: PaymentRequired, nonce = 1): PaymentPayload {
     x402Version: 2, accepted: challenge.accepts[0], resource: challenge.resource,
     payload: {
       signature: `0x${'11'.repeat(65)}`,
-      authorization: { from: PAYER, to: RECIPIENT, value: '3000', validAfter: '0', validBefore: String(Math.floor(Date.now() / 1000) + 120), nonce: `0x${nonce.toString(16).padStart(64, '0')}` },
+      authorization: { from: PAYER, to: RECIPIENT, value: '10000', validAfter: '0', validBefore: String(Math.floor(Date.now() / 1000) + 120), nonce: `0x${nonce.toString(16).padStart(64, '0')}` },
     },
     extensions: challenge.extensions,
   };
@@ -155,7 +155,7 @@ test('Finding 1 & 3: successful payment triggers single Telegram alert and struc
   assert.equal(h.telegramAlerts[0].chat_id, '@test_channel');
   assert.ok(h.telegramAlerts[0].text.includes(PAYER));
   assert.ok(h.telegramAlerts[0].text.includes(TX));
-  assert.ok(h.telegramAlerts[0].text.includes('0.003 USDC'));
+  assert.ok(h.telegramAlerts[0].text.includes('0.010 USDC'));
 
   // Verify structured JSON telemetry
   const sanitizeLog = h.stdoutLogs.find(l => l.endpoint === 'POST /v1/sanitize' && l.status === 200);
