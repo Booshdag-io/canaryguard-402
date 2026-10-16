@@ -125,7 +125,7 @@ export function configuration(env = process.env) {
   return { publicUrl: parsed.origin, payTo: getAddress(payTo) };
 }
 
-export function paymentOption(payTo = RECIPIENT, amount = '5000') {
+export function paymentOption(payTo = RECIPIENT, amount = '10000') {
   return {
     scheme: 'exact',
     network: NETWORK,
@@ -142,21 +142,21 @@ export const AGENT_CONTINUATION = {
       service: 'CanaryGuard-402',
       endpoint: 'https://canaryguard-402.onrender.com/v1/risk/full_audit',
       method: 'POST',
-      cost: '0.25 USDC',
+      cost: '0.02 USDC',
       reason: 'Run comprehensive 360-degree smart contract, liquidity, sanction, and prompt-injection security audit bundle',
     },
     {
       service: 'CanaryGuard-402',
       endpoint: 'https://canaryguard-402.onrender.com/v1/ondemand/market-snapshot',
       method: 'POST',
-      cost: '0.10 USDC',
+      cost: '0.02 USDC',
       reason: 'Fetch full Base DEX + Polymarket whale divergence + funding rate institutional snapshot',
     },
     {
       service: 'StealthGuard-402',
       endpoint: 'https://stealthguard-402.onrender.com/v1/stealth_scrape_and_sanitize',
       method: 'POST',
-      cost: '0.005 USDC',
+      cost: '0.015 USDC',
       reason: 'Bypass anti-bot shields and extract clean markdown from target links',
     },
   ],
@@ -176,14 +176,14 @@ export interface EndpointSpec {
 }
 
 export const PRIMARY_15_SPECS: EndpointSpec[] = [
-  // --- TIER 1: HIGH-FREQUENCY CORE PROBES ($0.005 USDC) ---
+  // --- TIER 1: HIGH-FREQUENCY CORE PROBES ($0.010 USDC) ---
   {
     path: '/v1/sanitize',
     operationId: 'sanitizeContent',
     summary: 'Prompt-injection & wallet-drainer firewall',
     description: 'Deterministic prompt-injection firewall and honeypot scrubber for AI agents. Sanitizes untrusted text and blocks detected wallet-draining commands before context ingestion.',
-    amountMicro: '5000',
-    priceUsd: '0.005',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['AI Security', 'Safety'],
     inputExample: { content: 'Example external text to verify', strict_mode: true },
     inputSchema: {
@@ -208,8 +208,8 @@ export const PRIMARY_15_SPECS: EndpointSpec[] = [
     operationId: 'inspectBaseToken',
     summary: 'Base token contract & metadata safety audit',
     description: 'Audits Base ERC-20 token contracts for honeypot risks, buy/sell transfer taxes, liquidity depth, and prompt injection traps in token metadata.',
-    amountMicro: '5000',
-    priceUsd: '0.005',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['Token Security', 'Safety'],
     inputExample: { token_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
     inputSchema: {
@@ -423,14 +423,14 @@ export const PRIMARY_15_SPECS: EndpointSpec[] = [
     },
   },
 
-  // --- TIER 3: 5 HIGH-TICKET ENTERPRISE AUDIT ENDPOINTS ($0.05 - $0.25 USDC) ---
+  // --- TIER 3: 5 ENTERPRISE AUDIT ENDPOINTS CAPPED AT AUTO-PAY SWEET SPOT ($0.020 USDC) ---
   {
     path: '/v1/risk/full_audit',
     operationId: 'runFullEnterpriseRiskAudit',
     summary: 'Comprehensive 360-degree smart contract, liquidity, sanction, and prompt-injection security audit bundle',
     description: 'Enterprise 360-degree security audit bundle combining Base bytecode/proxy inspection, DEX liquidity rug-risk analysis, OFAC/Lazarus sanctions screening, EIP-712 permit verification, and deterministic prompt-injection firewalling.',
-    amountMicro: '250000',
-    priceUsd: '0.25',
+    amountMicro: '20000',
+    priceUsd: '0.020',
     tags: ['Enterprise Audit', 'AI Security', 'DeFi Risk'],
     inputExample: {
       target_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
@@ -459,8 +459,8 @@ export const PRIMARY_15_SPECS: EndpointSpec[] = [
     operationId: 'verifyAgentAttestation',
     summary: 'Cryptographic agent capability, x402 envelope, and wallet risk attestation report',
     description: 'Generates a cryptographic attestation report verifying an autonomous AI agent wallet, x402 EIP-3009 payment capability, counterparty reputation score, and zero-drainer history on Base.',
-    amountMicro: '80000',
-    priceUsd: '0.08',
+    amountMicro: '20000',
+    priceUsd: '0.020',
     tags: ['Agent Verification', 'Attestation', 'x402'],
     inputExample: {
       agent_wallet: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
@@ -486,8 +486,8 @@ export const PRIMARY_15_SPECS: EndpointSpec[] = [
     operationId: 'getOndemandMarketSnapshot',
     summary: 'Full Base DEX + Polymarket whale divergence + funding rate institutional snapshot',
     description: 'On-demand institutional market intelligence snapshot combining Base DEX spot & TWAP prices, Aerodrome/Uniswap V3 liquidity depth, perpetual funding rates, and Polymarket whale orderbook divergence.',
-    amountMicro: '100000',
-    priceUsd: '0.10',
+    amountMicro: '20000',
+    priceUsd: '0.020',
     tags: ['Market Snapshot', 'Institutional Alpha', 'Base'],
     inputExample: { assets: ['ETH', 'BTC', 'SOL', 'AERO', 'VIRTUAL'], include_polymarket: true },
     inputSchema: {
@@ -509,8 +509,8 @@ export const PRIMARY_15_SPECS: EndpointSpec[] = [
     operationId: 'getTokenHistoryAndSpread',
     summary: 'Base token price history, Chainlink/DEX bid-ask spread check, and volatility skew',
     description: 'Returns multi-timeframe Base token price history (1h, 24h, 7d, 30d OHLCV summary), Chainlink vs. Uniswap V3/Aerodrome bid-ask spread in bps, and realized volatility skew.',
-    amountMicro: '50000',
-    priceUsd: '0.05',
+    amountMicro: '20000',
+    priceUsd: '0.020',
     tags: ['Token History', 'Spread Analytics', 'Oracle'],
     inputExample: { token: 'ETH', quote: 'USDC', window: '24h' },
     inputSchema: {
@@ -534,8 +534,8 @@ export const PRIMARY_15_SPECS: EndpointSpec[] = [
     operationId: 'getSafeYieldAllocation',
     summary: 'Risk-adjusted DeFi yield allocation matrix across audited Base & Arbitrum pools',
     description: 'Computes an institutional risk-adjusted DeFi capital allocation matrix across multi-audited Base and Arbitrum liquidity vaults (Morpho Blue, Aave V3, Moonwell, Aerodrome) with smart-contract timelock and depeg stress scores.',
-    amountMicro: '150000',
-    priceUsd: '0.15',
+    amountMicro: '20000',
+    priceUsd: '0.020',
     tags: ['DeFi Yield', 'Capital Allocation', 'Base'],
     inputExample: { capital_usdc: 50000, risk_tolerance: 'CONSERVATIVE', chains: ['base', 'arbitrum'] },
     inputSchema: {
@@ -588,8 +588,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'inspectContractInfo',
     summary: 'EVM contract bytecode size, proxy/EIP-7702 status & verified selectors',
     description: 'Inspects Base EVM smart contract bytecode size, EIP-1967/UUPS proxy implementation slots, EIP-7702 delegation designators, and verified function selectors.',
-    amountMicro: '9000',
-    priceUsd: '0.009',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['Smart Contracts', 'Safety'],
     inputExample: { contract_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', chain_id: 8453 },
     inputSchema: {
@@ -612,8 +612,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'checkWalletSanctions',
     summary: 'OFAC/SDN & exploit-list compliance screening for EVM/Solana addresses',
     description: 'Screens EVM and Solana wallet addresses against OFAC SDN sanctions lists, Lazarus Group attributions, and known DeFi exploit/drainer blacklists.',
-    amountMicro: '9000',
-    priceUsd: '0.009',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['Compliance', 'AI Security'],
     inputExample: { address: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1' },
     inputSchema: {
@@ -632,8 +632,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'inspectUniswapPoolState',
     summary: 'Base DEX pool liquidity, spot price & rug-risk audit',
     description: 'Audits Uniswap V3/V4 and Aerodrome liquidity pools on Base, returning tick liquidity depth, fee tier, price impact bps, and LP concentration rug-risk scores.',
-    amountMicro: '9000',
-    priceUsd: '0.009',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['DeFi', 'Base'],
     inputExample: { pool_or_token_address: '0x4200000000000000000000000000000000000006', quote_token: 'USDC' },
     inputSchema: {
@@ -656,8 +656,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'getCryptoPriceOnchain',
     summary: 'Tamper-resistant on-chain token prices on Base (Chainlink/DEX)',
     description: 'Returns tamper-resistant on-chain USD spot prices, 24h volatility, and Chainlink/TWAP oracle deviation metrics for major Base and EVM assets.',
-    amountMicro: '8000',
-    priceUsd: '0.008',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['DeFi', 'Oracle'],
     inputExample: { symbol: 'ETH' },
     inputSchema: {
@@ -672,8 +672,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'repairAndSanitizeJson',
     summary: 'Repairs broken LLM JSON output and strips prompt injections',
     description: 'Deterministically repairs malformed or truncated LLM JSON payloads (missing quotes, trailing commas, markdown fences) while scrubbing embedded prompt-injection payloads.',
-    amountMicro: '8000',
-    priceUsd: '0.008',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['AI Security', 'Utilities'],
     inputExample: { raw_json: '```json\n{"action": "swap", "token": "USDC",}\n```' },
     inputSchema: {
@@ -688,8 +688,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'auditUrlAgentReadiness',
     summary: 'Audits any website for llms.txt, x402, openapi.json, MCP, and hidden DOM traps',
     description: 'Audits any domain or URL for AI agent readiness (llms.txt, .well-known/x402, openapi.json, MCP server card) and detects hidden CSS/DOM prompt-injection traps.',
-    amountMicro: '9000',
-    priceUsd: '0.009',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['AI Security', 'Web Discovery'],
     inputExample: { url: 'https://canaryguard-402.onrender.com' },
     inputSchema: {
@@ -704,8 +704,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'decodeBaseTxStatus',
     summary: 'Base transaction receipt, gas, confirmation & token-transfer decoder',
     description: 'Decodes Base Mainnet transaction receipts, EIP-3009 transferWithAuthorization settlements, ERC-20 transfer logs, gas fees, and finality confirmations.',
-    amountMicro: '8000',
-    priceUsd: '0.008',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['Base', 'Transactions'],
     inputExample: { tx_hash: '0x03a5d4566a3963c93c33242935e6df5c8771ca79d22b56ba5b0bfb97a2753b87' },
     inputSchema: {
@@ -750,8 +750,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'calculateLlmTokenPricing',
     summary: 'Live input/output token cost calculator across 100+ frontier LLMs',
     description: 'Calculates exact input, cached-input, and output token costs across frontier LLMs (OpenAI, Anthropic, Gemini, DeepSeek, Meta) and recommends optimal model routing.',
-    amountMicro: '8000',
-    priceUsd: '0.008',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['AI Utilities', 'Pricing'],
     inputExample: { model: 'claude-3-7-sonnet', input_tokens: 10000, output_tokens: 2000 },
     inputSchema: {
@@ -765,8 +765,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'auditEip712Signature',
     summary: 'Audits EIP-712 / EIP-3009 typed data payloads for permit/approval drainers',
     description: 'Audits EIP-712 and EIP-3009 typed-data signature payloads (Permit, Permit2, transferWithAuthorization) to block malicious spender approvals and phishing domains.',
-    amountMicro: '9000',
-    priceUsd: '0.009',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['AI Security', 'Safety'],
     inputExample: {
       verifying_contract: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
@@ -785,8 +785,8 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
     operationId: 'auditMcpToolSchema',
     summary: 'Audits MCP tool schemas and descriptions for tool-poisoning attacks',
     description: 'Inspects Model Context Protocol (MCP) tool definitions, JSON schemas, and server cards for hidden instructions, tool shadowing, and data exfiltration vectors.',
-    amountMicro: '9000',
-    priceUsd: '0.009',
+    amountMicro: '10000',
+    priceUsd: '0.010',
     tags: ['AI Security', 'MCP'],
     inputExample: { tool_name: 'canary_sanitize', tool_description: 'Deterministic prompt-injection firewall' },
     inputSchema: {
