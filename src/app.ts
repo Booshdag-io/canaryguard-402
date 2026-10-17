@@ -460,6 +460,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
         paymentPayload: {
           x402Version: 2,
           resource: { url: resUrl, description: spec.description, mimeType: 'application/json' },
+          extensions: parsed.extensions,
           accepted: solanaReq,
           payload: parsed.payload || { transaction: txB64 },
         },
@@ -1526,6 +1527,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
           liquidity_usd: 18400000,
           teaser_verdict: '50% FREE TEASER: Pool Active ($18.4M Liq) | Insider Cluster Map & Smart-Money Netflow LOCKED',
           unlock_url: 'https://canaryguard-402.onrender.com/?token=DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
+          solana_blink_url: 'https://dial.to/?action=solana-action:https%3A%2F%2Fcanaryguard-402.onrender.com%2Fapi%2Factions%2Fscan%3Ftoken%3DDezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263',
           price_usdc: '0.010',
           timestamp: Math.floor(Date.now() / 1000),
         },
@@ -1537,6 +1539,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
           liquidity_usd: 78500000,
           teaser_verdict: '50% FREE TEASER: Pool Active ($78.5M Liq) | Insider Cluster Map & Smart-Money Netflow LOCKED',
           unlock_url: 'https://canaryguard-402.onrender.com/?token=0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b',
+          solana_blink_url: 'https://dial.to/?action=solana-action:https%3A%2F%2Fcanaryguard-402.onrender.com%2Fapi%2Factions%2Fscan%3Ftoken%3D0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b',
           price_usdc: '0.010',
           timestamp: Math.floor(Date.now() / 1000),
         },
