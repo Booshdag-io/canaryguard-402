@@ -1,0 +1,35 @@
+[
+  {
+    "service": "x402-agent-tollbooth",
+    "path": "/toll/ai_intel",
+    "priceUsd": "0.001",
+    "amountMicro": "1000",
+    "http_status": 200,
+    "tx_hash": "0x32e8bf26409b6efeca40ee03a4501e07f30ae183e4691a1bde69e073bf0d45e5",
+    "blockNumber": 52683435,
+    "status": "success",
+    "basescanUrl": "https://basescan.org/tx/0x32e8bf26409b6efeca40ee03a4501e07f30ae183e4691a1bde69e073bf0d45e5"
+  },
+  {
+    "service": "x402-agent-tollbooth",
+    "path": "/toll/arbitrage_scan",
+    "priceUsd": "0.002",
+    "amountMicro": "2000",
+    "http_status": 200,
+    "tx_hash": "0x6787ec567f036c78b4b485ed84d12c575d41837a325db6b5c6f2ca1d3a852bea",
+    "blockNumber": 52683436,
+    "status": "success",
+    "basescanUrl": "https://basescan.org/tx/0x6787ec567f036c78b4b485ed84d12c575d41837a325db6b5c6f2ca1d3a852bea"
+  },
+  {
+    "service": "x402-agent-tollbooth",
+    "path": "/toll/smart_router",
+    "priceUsd": "0.001",
+    "amountMicro": "1000",
+    "http_status": 200,
+    "tx_hash": "0xae4d8c9dc5c5d89e830870696de914d663b67f9159680553df7093f50ca0e9b0",
+    "blockNumber": 52683437,
+    "status": "success",
+    "basescanUrl": "https://basescan.org/tx/0xae4d8c9dc5c5d89e830870696de914d663b67f9159680553df7093f50ca0e9b0"
+  }
+]

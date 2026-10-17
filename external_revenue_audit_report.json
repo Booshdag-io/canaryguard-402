@@ -1,0 +1,9 @@
+{
+  "merchant_wallet": "0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1",
+  "buyer_wallet": "0x6b5f275F028A214fb2e6d21061db791E3b07BEeD",
+  "merchant_usdc_balance": "3.655908",
+  "buyer_usdc_balance": "0.386",
+  "total_external_transactions": 0,
+  "total_external_usdc": 0,
+  "external_transfers": []
+}

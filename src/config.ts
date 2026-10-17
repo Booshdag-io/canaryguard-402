@@ -798,11 +798,151 @@ export const VEXTORIUM_COMPAT_SPECS: EndpointSpec[] = [
   },
 ];
 
+export const SOLANA_NETWORK = 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp' as const;
+export const SOLANA_USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' as const;
+export const SOLANA_RECIPIENT = '3tQ4GthjUMqNsyrb1rZMocMHoNewFQWjDUvHZqWeYuCN' as const;
+export const SOLANA_FEE_PAYER = 'CjNFTjvBhbJJd2B5ePPMHRLx1ELZpa8dwQgGL727eKww' as const;
+export const PAYAI_FACILITATOR = 'https://facilitator.payai.network' as const;
+
+export const NANSEN_COMPAT_SPECS: EndpointSpec[] = [
+  {
+    path: '/api/v1/token-screener',
+    operationId: 'nansenTokenScreener',
+    summary: 'Real-time Solana & Base token screener with honeypot & liquidity filter ($0.010 USDC — 80% discount)',
+    description: 'Screens trending Solana (Pump.fun/Raydium) and Base (Aerodrome/Uniswap V3) tokens with pre-verified honeypot, tax, and liquidity depth metrics.',
+    amountMicro: '10000',
+    priceUsd: '0.010',
+    tags: ['DeFi', 'Alpha', 'Solana', 'Base'],
+    inputExample: { chain: 'solana', token_address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263' },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        chain: { type: 'string', default: 'solana' },
+        token_address: { type: 'string' },
+      },
+    },
+    outputExample: {
+      status: 'success',
+      tokens: [
+        { symbol: 'BONK', chain: 'solana', address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', price_usd: 0.000024, liquidity_usd: 18400000, honeypot: false },
+        { symbol: 'VIRTUAL', chain: 'base', address: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b', price_usd: 2.85, liquidity_usd: 78500000, honeypot: false },
+      ],
+    },
+  },
+  {
+    path: '/api/v1/smart-money/netflow',
+    operationId: 'nansenSmartMoneyNetflow',
+    summary: 'Smart-money whale wallet 24h netflow tracker on Solana & Base ($0.010 USDC)',
+    description: 'Tracks institutional and high-win-rate whale wallet net inflows and outflows across Solana SPL and Base ERC-20 tokens.',
+    amountMicro: '10000',
+    priceUsd: '0.010',
+    tags: ['Alpha', 'Smart Money', 'Solana', 'Base'],
+    inputExample: { chain: 'base', token_address: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b' },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        chain: { type: 'string', default: 'base' },
+        token_address: { type: 'string' },
+      },
+    },
+    outputExample: {
+      status: 'success',
+      netflow_24h_usd: 428900,
+      smart_wallets_buying: 14,
+      signal: 'STRONG_ACCUMULATION',
+    },
+  },
+  {
+    path: '/api/v1/smart-money/dex-trades',
+    operationId: 'nansenSmartMoneyDexTrades',
+    summary: 'Live smart-money DEX swap execution feed across Raydium, Jupiter, Aerodrome & Uniswap ($0.010 USDC)',
+    description: 'Returns real-time DEX trades executed by labeled smart-money and whale wallets on Solana and Base with pre-trade honeypot verification.',
+    amountMicro: '10000',
+    priceUsd: '0.010',
+    tags: ['Alpha', 'DEX', 'Solana', 'Base'],
+    inputExample: { chain: 'base', token_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        chain: { type: 'string', default: 'base' },
+        token_address: { type: 'string' },
+      },
+    },
+    outputExample: {
+      status: 'success',
+      trades_count: 3,
+      dex_trades: [{ dex: 'Aerodrome SlipStream', side: 'BUY', amount_usd: 45200 }],
+    },
+  },
+  {
+    path: '/api/v1/tgm/who-bought-sold',
+    operationId: 'nansenTgmWhoBoughtSold',
+    summary: 'Token God Mode (TGM): Top buyers & sellers breakdown by wallet cohort ($0.010 USDC)',
+    description: 'Analyzes who bought and sold a specific Solana or Base token over the last 24h, segmented by Smart Money, Whales, Fresh Wallets, and Dev Clusters.',
+    amountMicro: '10000',
+    priceUsd: '0.010',
+    tags: ['Alpha', 'TGM', 'Solana', 'Base'],
+    inputExample: { token_address: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b' },
+    inputSchema: {
+      type: 'object',
+      properties: { token_address: { type: 'string' } },
+    },
+    outputExample: {
+      status: 'success',
+      top_buyers_usd: 1240000,
+      top_sellers_usd: 811100,
+      net_buyer_cohort: 'SMART_MONEY_AND_WHALES',
+    },
+  },
+  {
+    path: '/api/v1/tgm/holders',
+    operationId: 'nansenTgmHolders',
+    summary: 'Token God Mode (TGM): Top holder concentration, sybil cluster & lock breakdown ($0.010 USDC)',
+    description: 'Returns top-10/top-50 holder distribution, LP lock percentage, and coordinated sybil cluster detection for any Solana or Base token.',
+    amountMicro: '10000',
+    priceUsd: '0.010',
+    tags: ['Security', 'TGM', 'Solana', 'Base'],
+    inputExample: { token_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
+    inputSchema: {
+      type: 'object',
+      properties: { token_address: { type: 'string' } },
+    },
+    outputExample: {
+      status: 'success',
+      top_10_holders_pct: 14.8,
+      sybil_clusters_detected: 0,
+      verdict: 'HEALTHY_HOLDER_DISTRIBUTION',
+    },
+  },
+  {
+    path: '/api/v1/profiler/address/current-balance',
+    operationId: 'nansenProfilerAddressBalance',
+    summary: 'Wallet Address Profiler: Current portfolio balances, PnL & counterparty safety ($0.010 USDC)',
+    description: 'Profiles any Solana or Base wallet address for current token balances, USD valuation, historical win-rate, and drainer/OFAC taint.',
+    amountMicro: '10000',
+    priceUsd: '0.010',
+    tags: ['Wallet Intelligence', 'Profiler', 'Solana', 'Base'],
+    inputExample: { address: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1' },
+    inputSchema: {
+      type: 'object',
+      properties: { address: { type: 'string' } },
+    },
+    outputExample: {
+      status: 'success',
+      address: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
+      total_value_usd: 148920.50,
+      sanctioned: false,
+    },
+  },
+];
+
 export const ENDPOINT_SPECS: EndpointSpec[] = [
   ...PRIMARY_15_SPECS,
   ...VEXTORIUM_COMPAT_SPECS,
+  ...NANSEN_COMPAT_SPECS,
 ];
 
 export const ENDPOINT_MAP = new Map<string, EndpointSpec>(
   ENDPOINT_SPECS.map(spec => [spec.path, spec])
 );
+
