@@ -168,6 +168,15 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
             };
             if (Array.isArray(parsed.accepts) && parsed.accepts[0]) {
               delete parsed.accepts[0].resource;
+              parsed.accepts.push({
+                scheme: 'exact',
+                network: 'solana:mainnet',
+                asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+                amount: parsed.accepts[0].amount || '10000',
+                maxTimeoutSeconds: 300,
+                payTo: process.env.SOLANA_MERCHANT_ADDRESS || '3tQ4GthjUMqNsyrb1rZMocMHoNewFQWjDUvHZqWeYuCN',
+                extra: { name: 'USD Coin (Solana)', version: '2' },
+              });
             }
             res.setHeader('PAYMENT-REQUIRED', Buffer.from(JSON.stringify(parsed)).toString('base64'));
           } catch {}
