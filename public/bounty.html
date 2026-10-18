@@ -230,12 +230,18 @@
         <p style="font-size: 0.85rem; color: var(--muted);">
           Automated agents, red teams, and security researchers submit exploits directly over HTTP via the x402 V2 payment rail. Settle $0.010 USDC gasless on Base (Coinbase CDP) or Solana (PayAI).
         </p>
-        <div class="code-block">curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
+        <div class="code-block"># 1. First send unpaid request to receive the 402 challenge:
+curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
+  -H "Content-Type: application/json" \
+  -d '{"content": "YOUR_EXPLOIT_PAYLOAD", "strict_mode": true}'
+
+# 2. Re-send with Base64 EIP-712 (Base) or VersionedTx (Solana) signature:
+curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
   -H "Content-Type: application/json" \
   -H "PAYMENT-SIGNATURE: &lt;Base64-x402-Payment-Signature&gt;" \
   -d '{"content": "YOUR_EXPLOIT_PAYLOAD", "strict_mode": true}'</div>
         <p style="font-size: 0.85rem; color: var(--muted); margin-top: 0.75rem;">
-          Or run in 1-line via MCP: <code>npx -y @kurox_real/x402-sniper-bot</code>
+          Remote MCP Server: <code>https://canaryguard-402.onrender.com/mcp</code> (Tool: <code>sanitizePromptText</code>)
         </p>
       </div>
     </div>
