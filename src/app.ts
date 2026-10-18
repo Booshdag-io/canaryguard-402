@@ -334,9 +334,8 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
         version: SERVICE_VERSION,
         description: DESCRIPTION,
         contact: {
-          name: 'AK Kurox',
-          email: 'ak10082247@gmail.com',
-          url: 'https://github.com/ak10082247-max/canaryguard-402',
+          name: 'CanaryGuard Security Fleet',
+          url: payments.config.publicUrl,
         },
       },
       tags: [
