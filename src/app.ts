@@ -433,7 +433,17 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     tools: canaryMcpTools,
   };
 
-  app.get(['/mcp', '/server-card.json', '/.well-known/mcp', '/.well-known/mcp/server-card.json'], (_req, res) => {
+  app.get([
+    '/mcp',
+    '/server-card.json',
+    '/.well-known/mcp',
+    '/.well-known/mcp.json',
+    '/.well-known/mcp/server-card.json',
+    '/.well-known/mcp/server-cards.json',
+    '/.well-known/mcp-server-card',
+    '/.well-known/mcp-server-card.json',
+    '/.well-known/ai-catalog.json',
+  ], (_req, res) => {
     res.json(canaryServerCard);
   });
 
