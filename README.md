@@ -7,6 +7,7 @@
 [![ElizaOS Plugin](https://img.shields.io/npm/v/@kurox_real/plugin-canaryguard?label=ElizaOS%20Plugin&color=orange)](https://www.npmjs.com/package/@kurox_real/plugin-canaryguard)
 [![AgentKit Plugin](https://img.shields.io/npm/v/@kurox_real/agentkit-canaryguard-402?label=AgentKit%20Action&color=crimson)](https://www.npmjs.com/package/@kurox_real/agentkit-canaryguard-402)
 [![Client SDK](https://img.shields.io/npm/v/@kurox_real/canaryguard-client?label=TS%20SDK&color=teal)](https://www.npmjs.com/package/@kurox_real/canaryguard-client)
+[![Glama](https://glama.ai/mcp/servers/ak10082247-max/canaryguard-402/badges/score.svg)](https://glama.ai/mcp/servers/ak10082247-max/canaryguard-402)
 
 Deterministic prompt-injection firewall and honeypot scrubber for autonomous AI agents. `POST /v1/sanitize` costs **0.010 USDC** on Base mainnet through the Coinbase CDP x402 facilitator. A free public evaluation endpoint is available at `POST /v1/sanitize/preview`. A remote MCP tool exposes the same inspection with payment per tool call, and flat-rate monthly fiat subscriptions are supported via MCPize.
 
