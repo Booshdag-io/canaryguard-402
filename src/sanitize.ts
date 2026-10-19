@@ -28,31 +28,44 @@ export type SanitizeResult = {
   };
 };
 
-// Includes zero-width, bidi-formatting, variation selectors, and soft-hyphen characters that can conceal a command.
-const INVISIBLE_CHARACTERS = /[\u00ad\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufe00-\ufe0f\ufeff]/gu;
-const ROLE_DELIMITER = /\[\/?(?:INST|AVAILABLE_TOOLS|TOOL_RESULTS|TOOL_CALLS|PROMPT|SYSTEM|CONTEXT)\]|<\|(?:im_start|im_end|system|developer|assistant|user|start_header_id|end_header_id|eot_id|begin_of_text|end_of_text)\b|<<\/?(?:SYS|SYSTEM)>>|<\/?(?:system|developer|assistant|instruction|instructions|context|prompt_context|antThinking|thinking)>/i;
+// Includes zero-width, bidi-formatting, variation selectors, unicode tags (E0001-E007F), and soft-hyphen characters that can conceal commands.
+const INVISIBLE_CHARACTERS = /[\u00ad\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufe00-\ufe0f\ufeff\u{e0001}-\u{e007f}]/gu;
+const ZALGO_DIACRITICS = /[\u0300-\u036f\u1ab0-\u1aff\u1dc0-\u1dff\u20d0-\u20ff\ufe20-\ufe2f]/gu;
+const UNICODE_SPACES = /[\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]/gu;
+const ROLE_DELIMITER = /\[\/?(?:INST|AVAILABLE_TOOLS|TOOL_RESULTS|TOOL_CALLS|PROMPT|SYSTEM|CONTEXT|RULES|DIRECTIVES|INSTRUCTION|DEVELOPER)\]|<\|(?:im_start|im_end|system|developer|assistant|user|start_header_id|end_header_id|eot_id|begin_of_text|end_of_text)\b|<<\/?(?:SYS|SYSTEM)>>|<\/?(?:system|developer|assistant|instruction|instructions|context|prompt_context|system_prompt|user_input|antThinking|thinking|role|prompt)[\s>]/i;
 const ROLE_PREFIX = /(?:^|[\r\n])\s*(?:#{1,4}\s*)?(?:system|developer|assistant|admin|root|superuser|operator|jailbreak|DAN|instruction|prompt)\s*:/i;
-const INSTRUCTION_OVERRIDE = /\b(?:(?:ignore|disregard|forget|override|bypass|supersede|discard|neglect|abandon|drop|clear|reset|cancel|revoke|overwrite|circumvent|violate|disable|suspend|deactivate)\s+(?:(?:all|any|the|your|our|every|these|those)\s+)*(?:previous|prior|earlier|above|system|developer|safety|guardrail|original|initial)\s+(?:instructions?|prompts?|rules?|messages?|directives?|guidelines?|constraints?|parameters?|policies|filters?|guardrails?|configuration|settings|restrictions?|programming)|(?:you\s+(?:are\s+to|must|will|shall)\s+)?(?:do\s+(?:what|as)\s+i\s+(?:say|tell\s+you)|obey(?:\s+(?:all|only|my)\s+(?:commands?|instructions?))?)|follow\s+only\s+(?:my|these)\s+instructions?|from\s+now\s+on\s+(?:you\s+(?:will|must|shall)|act\s+as|treat|regard)|your\s+new\s+(?:instructions?|rules?|role|task)\s+(?:is|are)|new\s+instructions?\s*:|(?:reveal|dump|print|output|display|leak|show|repeat)\s+(?:(?:the|your|all|every)\s+)*(?:system\s+prompt|initial\s+instructions?|hidden\s+prompt|above\s+text|instructions\s+verbatim|preceding\s+prompt|internal\s+instructions?))\b/i;
+const MARKDOWN_DELIMITER_ESCAPE = /(?:^|[\r\n])\s*(?:```+\s*(?:system|developer|assistant|instruction|prompt|override|json)?|#{1,4}\s*(?:system(?:\s+prompt)?|developer(?:\s+prompt)?|assistant|instructions?|override|new\s+rules|system\s+directives?|prompt|rules)\b|===\s*(?:SYSTEM|DEVELOPER|INSTRUCTIONS?)\s*===|---+\s*(?:BEGIN|START)\s*(?:SYSTEM|DEVELOPER|INSTRUCTIONS?))/i;
+const STRUCTURED_ROLE_INJECTION = /["']?role["']?\s*:\s*["']?(?:system|developer|assistant|root|admin)["']?|\bSYSTEM_PROMPT\b|\b(?:system|developer|assistant)_message\b/i;
+const INSTRUCTION_OVERRIDE = /\b(?:(?:ignore|disregard|forget|override|bypass|supersede|discard|neglect|abandon|drop|clear|reset|cancel|revoke|overwrite|circumvent|violate|disable|suspend|deactivate|stop|cease|wipe|purge|erase)\s*(?:(?:all|any|the|your|our|every|these|those|prior|previous|earlier|above|system|developer|safety|guardrail|original|initial|memory)\s*)*(?:instructions?|prompts?|rules?|messages?|directives?|guidelines?|constraints?|parameters?|policies|filters?|guardrails?|configuration|settings|restrictions?|programming|memory|context)|(?:you\s*(?:are\s*to|must|will|shall)\s*)?(?:do\s*(?:what|as)\s*i\s*(?:say|tell\s*you)|obey(?:\s*(?:all|only|my)\s*(?:commands?|instructions?))?)|follow\s*only\s*(?:my|these)\s*instructions?|from\s*now\s*on\s*(?:you\s*(?:will|must|shall)|act\s*as|treat|regard)|your\s*new\s*(?:instructions?|rules?|role|task)\s*(?:is|are)|new\s*instructions?\s*:|(?:reveal|dump|print|output|display|leak|show|repeat)\s*(?:(?:the|your|all|every)\s*)*(?:system\s*prompt|initial\s*instructions?|hidden\s*prompt|above\s*text|instructions\s*verbatim|preceding\s*prompt|internal\s*instructions?|secrets?|keys?|vault|passwords?|credentials?)|you\s*are\s*(?:now\s*)?free\s*from\s*(?:all\s*)?(?:rules|restrictions|constraints))\b/i;
 const JAILBREAK_ROLEPLAY = /\b(?:(?:act\s+as|pretend\s+(?:to\s+be|you\s+are)|simulate|roleplay\s+as|you\s+are\s+now)\s+(?:an?\s+)*(?:unrestricted|jailbreak(?:ed)?|DAN|developer|root|admin|god\s+mode|unfiltered|evil|anarchist|hypothetical)|(?:developer\s+mode|maintenance\s+mode|debug\s+mode|sandbox\s+mode|override\s+mode)\s+(?:enabled|activated|on|true)|do\s+anything\s+now|jailbreak\s+mode)\b/i;
 const MULTILINGUAL_OVERRIDE = /\b(?:(?:ignora|olvida|anula|descarta)\s+(?:todas?\s+las?\s+)?(?:instrucciones|reglas|directrices)|(?:ignorez?|oubli(?:ez|er)|annulez?)\s+(?:toutes?\s+les?\s+)?(?:instructions?|règles?|directives?)|(?:ignoriere?|vergiss|übergehe)\s+(?:alle\s+)?(?:vorherigen?\s+)?(?:anweisungen?|regeln?)|(?:игнорируй|забудь|отмени)\s+(?:все\s+)?(?:предыдущие\s+)?(?:инструкции|правила)|(?:ignora|dimentica|annulla)\s+(?:tutte\s+le\s+)?(?:istruzioni|regole)|(?:ignore|esqueça|anule)\s+(?:todas\s+as\s+)?(?:instruções|regras))\b/i;
-const WALLET_ASSET_COMMAND = /\b(?:send|transfer|wire|move|drain|empty|sweep|withdraw|flush|dump|forward|approve|permit|authorize|disburse|pay|release|execute)\s+(?:(?:all|every|entire|the|your|my|our|any|remaining)\s+)*(?:wallet|treasury|vault|funds?|balances?|assets?|tokens?|crypto|eth|usdc|usdt|coins?|sol|solana|lamports|wei)\b/i;
-const WALLET_DESTINATION_COMMAND = /\b(?:send|transfer|wire|move|drain|empty|sweep|withdraw|flush|forward|pay|disburse)\s+(?:(?:it|them|all|funds?|balances?|tokens?|assets?|the\s+wallet|the\s+vault)\s+)*(?:to|into)\s+(?:(?:the\s+following|this|my|the|an?)\s+)*(?:(?:wallet|recipient|destination)\s+)?(?:address\s*(?::|\s+)?)?(?:0x[\da-f]{4,40}|[1-9A-HJ-NP-Za-km-z]{32,44})\b/i;
+const WALLET_ASSET_COMMAND = /\b(?:send|transfer|wire|move|drain|empty|sweep|withdraw|flush|dump|forward|approve|permit|authorize|disburse|pay|release|execute)\s*(?:(?:all|every|entire|the|your|my|our|any|remaining)\s*)*(?:wallet|treasury|vault|bounty|prize|pool|funds?|balances?|assets?|tokens?|crypto|eth|usdc|usdt|coins?|sol|solana|lamports|wei)\b/i;
+const WALLET_DESTINATION_COMMAND = /\b(?:send|transfer|wire|move|drain|empty|sweep|withdraw|flush|forward|pay|disburse|release)\s*(?:(?:it|them|all|funds?|balances?|tokens?|assets?|bounty|prize|the\s+wallet|the\s+vault)\s*)*(?:to|into)\s*(?:(?:the\s+following|this|my|the|an?)\s*)*(?:(?:wallet|recipient|destination)\s*)?(?:address\s*(?::|\s*)?)?(?:0x[\da-f]{4,40}|[1-9A-HJ-NP-Za-km-z]{32,44})\b/i;
 const EVM_ADDRESS = /\b0x[\da-f]{40}\b/gi;
 const ACTIVE_ELEMENTS = 'script, style, template, noscript, iframe, object, embed, svg, math, head, meta, link, base';
 const BLOCK_ELEMENTS = 'p, div, section, article, header, footer, main, aside, nav, li, tr, h1, h2, h3, h4, h5, h6, blockquote, pre';
 
 function deobfuscate(value: string): string {
-  return value
-    .replace(/[аА]/g, 'a')
-    .replace(/[сС]/g, 'c')
-    .replace(/[еЕ]/g, 'e')
-    .replace(/[оО]/g, 'o')
-    .replace(/[рР]/g, 'p')
-    .replace(/[ѕЅ]/g, 's')
-    .replace(/[хХ]/g, 'x')
-    .replace(/[уУ]/g, 'y')
-    .replace(/[іІ]/g, 'i')
-    .replace(/[јЈ]/g, 'j')
+  // Collapse single-character spaced/punctuated words like "i g n o r e" or "i.g.n.o.r.e" or "i-g-n-o-r-e"
+  const despaced = value.replace(/\b([a-zA-Z0-9](?:[ ._\-][a-zA-Z0-9]){2,})\b/g, m => m.replace(/[ ._\-]+/g, ''));
+  return despaced
+    // Cyrillic homoglyphs
+    .replace(/[\u0430\u0410]/g, 'a')
+    .replace(/[\u0441\u0421]/g, 'c')
+    .replace(/[\u0435\u0415]/g, 'e')
+    .replace(/[\u043e\u041e]/g, 'o')
+    .replace(/[\u0440\u0420]/g, 'p')
+    .replace(/[\u0455\u0405]/g, 's')
+    .replace(/[\u0445\u0425]/g, 'x')
+    .replace(/[\u0443\u0423]/g, 'y')
+    .replace(/[\u0456\u0406]/g, 'i')
+    .replace(/[\u0458\u0408]/g, 'j')
+    // Greek homoglyphs
+    .replace(/[\u03b1\u0391]/g, 'a')
+    .replace(/[\u03bf\u039f]/g, 'o')
+    .replace(/[\u03bd\u039d]/g, 'v')
+    .replace(/[\u03c1\u03a1]/g, 'p')
+    // Leetspeak / common symbol substitutions
     .replace(/[@]/g, 'a')
     .replace(/[$]/g, 's')
     .replace(/[0]/g, 'o')
@@ -60,6 +73,52 @@ function deobfuscate(value: string): string {
     .replace(/[3]/g, 'e')
     .replace(/[4]/g, 'a')
     .replace(/[5]/g, 's');
+}
+
+function checkEncodedInjections(value: string): string[] {
+  const threats: string[] = [];
+  
+  // 1. Base64 inspection (>=16 chars of base64 chars)
+  const b64Matches = value.match(/[A-Za-z0-9+/]{16,}={0,2}/g);
+  if (b64Matches) {
+    for (const chunk of b64Matches) {
+      try {
+        const decoded = Buffer.from(chunk, 'base64').toString('utf8');
+        if (decoded.length >= 8 && /^[ -~\t\r\n]+$/.test(decoded)) {
+          if (ROLE_DELIMITER.test(decoded) || ROLE_PREFIX.test(decoded)) threats.push('encoded_role_delimiter');
+          if (INSTRUCTION_OVERRIDE.test(decoded)) threats.push('encoded_instruction_override');
+          if (JAILBREAK_ROLEPLAY.test(decoded)) threats.push('encoded_jailbreak_roleplay');
+          if (matchesWalletCommand(decoded)) threats.push('encoded_wallet_command');
+        }
+      } catch {}
+    }
+  }
+
+  // 2. URL percent-encoding inspection (e.g. %69%67%6e%6f%72%65)
+  if (/%[0-9a-fA-F]{2}/.test(value)) {
+    try {
+      const decoded = decodeURIComponent(value);
+      if (decoded !== value) {
+        if (ROLE_DELIMITER.test(decoded) || ROLE_PREFIX.test(decoded)) threats.push('encoded_role_delimiter');
+        if (INSTRUCTION_OVERRIDE.test(decoded)) threats.push('encoded_instruction_override');
+        if (JAILBREAK_ROLEPLAY.test(decoded)) threats.push('encoded_jailbreak_roleplay');
+        if (matchesWalletCommand(decoded)) threats.push('encoded_wallet_command');
+      }
+    } catch {}
+  }
+
+  // 3. Hex escape sequences inspection (e.g. \x69\x67\x6e\x6f\x72\x65)
+  if (/(?:\\x[0-9a-fA-F]{2}){4,}/.test(value)) {
+    try {
+      const decoded = value.replace(/\\x([0-9a-fA-F]{2})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)));
+      if (ROLE_DELIMITER.test(decoded) || ROLE_PREFIX.test(decoded)) threats.push('encoded_role_delimiter');
+      if (INSTRUCTION_OVERRIDE.test(decoded)) threats.push('encoded_instruction_override');
+      if (JAILBREAK_ROLEPLAY.test(decoded)) threats.push('encoded_jailbreak_roleplay');
+      if (matchesWalletCommand(decoded)) threats.push('encoded_wallet_command');
+    } catch {}
+  }
+
+  return threats;
 }
 
 function matchesWalletCommand(value: string): boolean {
@@ -71,10 +130,13 @@ function commandThreats(value: string): string[] {
   const deobf = deobfuscate(normalized);
   const found: string[] = [];
   if (ROLE_DELIMITER.test(normalized) || ROLE_PREFIX.test(normalized) || ROLE_DELIMITER.test(deobf) || ROLE_PREFIX.test(deobf)) found.push('role_delimiter_override');
+  if (MARKDOWN_DELIMITER_ESCAPE.test(normalized) || MARKDOWN_DELIMITER_ESCAPE.test(deobf)) found.push('markdown_delimiter_escape');
+  if (STRUCTURED_ROLE_INJECTION.test(normalized) || STRUCTURED_ROLE_INJECTION.test(deobf)) found.push('structured_role_injection');
   if (INSTRUCTION_OVERRIDE.test(normalized) || INSTRUCTION_OVERRIDE.test(deobf)) found.push('instruction_override');
   if (JAILBREAK_ROLEPLAY.test(normalized) || JAILBREAK_ROLEPLAY.test(deobf)) found.push('jailbreak_roleplay_detected');
   if (MULTILINGUAL_OVERRIDE.test(normalized)) found.push('multilingual_instruction_override');
   if (matchesWalletCommand(normalized) || matchesWalletCommand(deobf)) found.push('wallet_transfer_command');
+  for (const t of checkEncodedInjections(value)) found.push(t);
   return found;
 }
 
@@ -140,6 +202,8 @@ function scrubCommandLines(value: string): string {
   const patterns = [
     ROLE_DELIMITER,
     ROLE_PREFIX,
+    MARKDOWN_DELIMITER_ESCAPE,
+    STRUCTURED_ROLE_INJECTION,
     INSTRUCTION_OVERRIDE,
     JAILBREAK_ROLEPLAY,
     MULTILINGUAL_OVERRIDE,
@@ -179,8 +243,17 @@ function extractAddresses(value: string): CryptoAddressFinding[] {
 /** Rule-based inspection of untrusted text; this receipt never certifies semantic safety. */
 export function sanitizeContent(content: string, strictMode = true): SanitizeResult {
   const findings = new Set<string>();
-  const normalizedContent = content.replace(INVISIBLE_CHARACTERS, '');
-  if (normalizedContent !== content) findings.add('concealed_unicode_removed');
+  let normalizedContent = content.replace(UNICODE_SPACES, ' ');
+  const strippedZalgo = normalizedContent.replace(ZALGO_DIACRITICS, '');
+  if (strippedZalgo !== normalizedContent) {
+    findings.add('zalgo_diacritics_removed');
+    normalizedContent = strippedZalgo;
+  }
+  const strippedInvisible = normalizedContent.replace(INVISIBLE_CHARACTERS, '');
+  if (strippedInvisible !== normalizedContent) {
+    findings.add('concealed_unicode_removed');
+    normalizedContent = strippedInvisible;
+  }
   const { allText, visibleText } = extractPlainText(normalizedContent, findings);
   const detectedCommands = new Set([
     ...commandThreats(normalizedContent),
@@ -203,12 +276,16 @@ export function sanitizeContent(content: string, strictMode = true): SanitizeRes
   let riskScore = 0.01;
   if (findings.has('html_markup_removed')) riskScore = 0.05;
   if (findings.has('concealed_unicode_removed') || findings.has('html_hidden_content_removed')) riskScore = Math.max(riskScore, 0.2);
+  if (findings.has('zalgo_diacritics_removed')) riskScore = Math.max(riskScore, 0.4);
   if (findings.has('active_html_removed') || findings.has('unsafe_html_attributes_removed')) riskScore = Math.max(riskScore, 0.4);
   if (detectedCommands.has('role_delimiter_override')) riskScore = Math.max(riskScore, 0.85);
+  if (detectedCommands.has('markdown_delimiter_escape')) riskScore = Math.max(riskScore, 0.9);
+  if (detectedCommands.has('structured_role_injection')) riskScore = Math.max(riskScore, 0.9);
   if (detectedCommands.has('instruction_override')) riskScore = Math.max(riskScore, 0.95);
   if (detectedCommands.has('jailbreak_roleplay_detected')) riskScore = Math.max(riskScore, 0.96);
   if (detectedCommands.has('multilingual_instruction_override')) riskScore = Math.max(riskScore, 0.95);
   if (detectedCommands.has('wallet_transfer_command')) riskScore = Math.max(riskScore, 0.98);
+  if (detectedCommands.has('encoded_role_delimiter') || detectedCommands.has('encoded_instruction_override') || detectedCommands.has('encoded_jailbreak_roleplay') || detectedCommands.has('encoded_wallet_command')) riskScore = Math.max(riskScore, 0.98);
   for (const address of addresses) riskScore = Math.max(riskScore, address.risk_score);
 
   return {
