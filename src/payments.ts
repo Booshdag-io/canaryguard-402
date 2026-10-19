@@ -57,6 +57,7 @@ export async function createPayments(env = process.env, provided?: FacilitatorCl
 
     routesConfig[`POST ${spec.path}`] = { ...baseRoute, extensions: discoveryPost };
     routesConfig[`GET ${spec.path}`] = { ...baseRoute, extensions: discoveryGet };
+    routesConfig[`HEAD ${spec.path}`] = { ...baseRoute, extensions: discoveryGet };
   }
 
   const httpServer = new x402HTTPResourceServer(server, routesConfig);
