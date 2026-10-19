@@ -475,8 +475,8 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   // Method & Header normalization
   app.use((req, res, next) => {
     if (ENDPOINT_MAP.has(req.path)) {
-      if (!['GET', 'POST'].includes(req.method)) {
-        res.status(405).set('Allow', 'POST, GET').json({ error: 'method_not_allowed' });
+      if (!['GET', 'POST', 'HEAD'].includes(req.method)) {
+        res.status(405).set('Allow', 'POST, GET, HEAD').json({ error: 'method_not_allowed' });
         return;
       }
       req.headers.accept = 'application/json';
