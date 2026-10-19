@@ -12,6 +12,7 @@
     "dev": "node --env-file-if-exists=.env.local --import tsx src/server.ts",
     "test": "tsx --test test/*.test.ts",
     "seed": "node --import tsx scripts/seed_payment.ts",
+    "mcp": "node dist/stdio.js",
     "sales": "node --import tsx scripts/sales_tracker.ts"
   },
   "dependencies": {
