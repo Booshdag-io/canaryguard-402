@@ -246,6 +246,70 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     res.type('text/plain').send('# CanaryGuard 402\nPrompt injection firewall & 15-endpoint Base intelligence suite.');
   });
 
+  // Compliance, SEO & Metadata Routes
+  app.get('/robots.txt', (_req, res) => {
+    res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /v1/telemetry/\nSitemap: https://canaryguard-402.onrender.com/sitemap.xml\n');
+  });
+
+  app.get('/sitemap.xml', (_req, res) => {
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://canaryguard-402.onrender.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/bounty.html</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/stats</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/pricing</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+</urlset>`);
+  });
+
+  app.get(['/pricing', '/plans'], (_req, res) => {
+    res.json({
+      service: 'canaryguard-402',
+      pricing_model: 'x402-pay-per-request',
+      accepted_currencies: ['USDC on Base (eip155:8453)', 'USDC on Solana (solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp)'],
+      gasless_sponsorship: '100% sponsored ($0 ETH / $0 SOL required)',
+      tier_base: { price_per_request: '0.010 USDC', amount_micro: 10000, description: 'Deterministic Prompt Injection Firewall & Tool Guard' },
+      tier_premium: { price_per_request: '0.020 USDC', amount_micro: 20000, description: 'Token Screener, Dex Trades & Deep Security Audits' },
+      challenge_bounty_fee: { price_per_attempt: '0.010 USDC', bounty_pot: '$5.00+ USDC on-chain', url: 'https://canaryguard-402.onrender.com/bounty.html' },
+      docs: 'https://canaryguard-402.onrender.com/stats'
+    });
+  });
+
+  app.get(['/privacy', '/legal/privacy', '/privacy-policy'], (_req, res) => {
+    res.json({
+      service: 'canaryguard-402',
+      privacy_summary: 'Zero-retention deterministic security proxy. No prompt content or private keys are stored on disk or persistent databases.',
+      data_handling: 'Ephemeral, in-memory processing. Request bodies are evaluated statelessly in <1ms and discarded immediately.',
+      telemetry: 'Only anonymous on-chain transaction hashes and sanitized execution latency metrics are recorded for SLA verification.',
+      contact: 'security@canaryguard.network'
+    });
+  });
+
+  app.get(['/terms', '/legal/terms', '/terms-of-service'], (_req, res) => {
+    res.json({
+      service: 'canaryguard-402',
+      protocol: 'x402 V2 HTTP Micropayment Protocol',
+      terms: [
+        'All API requests are settled on-chain via EIP-712 or SPL Token transfer authorization.',
+        'Settlements are instant, final, and non-refundable once verified by the facilitator.',
+        'Red-Team Challenge Bounty: Payouts require an on-chain Base transaction hash demonstrating a successful prompt hijack in strict mode evaluated against server-side deterministic rules. Client-side browser tampering, Inspect Element modifications, or benign non-adversarial inputs do not qualify.'
+      ],
+      compliance: 'Non-custodial cryptographic settlement infrastructure.'
+    });
+  });
+
+  app.get(['/about', '/about-us', '/team', '/leadership', '/company', '/contact', '/contact-us', '/press'], (_req, res) => {
+    res.json({
+      name: 'CanaryGuard 402',
+      mission: 'Autonomous AI Agent Firewall & On-Chain Intelligence Suite',
+      network: 'Base Mainnet (8453) & Solana Mainnet',
+      facilitators: ['Coinbase CDP', 'PayAI Network'],
+      support: 'https://canaryguard-402.onrender.com/bounty.html',
+      docs: 'https://canaryguard-402.onrender.com/stats'
+    });
+  });
+
   // Static x402 discovery manifest
   const x402Manifest = {
     name: 'CanaryGuard 402',

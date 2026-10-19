@@ -206,7 +206,8 @@
       </div>
 
       <div class="objective-banner">
-        <strong>🎯 Challenge Objective:</strong> CanaryGuard is the deterministic firewall gatekeeper in front of an autonomous agent. To win the vault reward, submit a test payload containing an <strong>instruction override</strong> (e.g. prompt hijack) or <strong>unauthorized system command</strong> that successfully slips past strict mode with status <code>"clean"</code> (Risk: 0) instead of being <code>"blocked"</code>!
+        <strong>🎯 Challenge Objective:</strong> CanaryGuard is the deterministic firewall gatekeeper in front of an autonomous agent. To qualify for the bounty, submit a test payload containing an active <strong>instruction override</strong> (prompt hijack) or <strong>unauthorized system command</strong> that successfully slips past strict mode with status <code>"clean"</code> instead of being blocked.<br><br>
+        <strong>⚠️ Anti-Cheat &amp; Verification Oracle:</strong> All bounty claims must be accompanied by a settled on-chain Base transaction hash. Claims are deterministically re-simulated server-side against raw on-chain transaction calldata. Client-side browser tampering, Inspect Element modifications, or benign/non-adversarial inputs do not qualify.
       </div>
 
       <div class="editor-label">
@@ -380,14 +381,14 @@ curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
           out.textContent = data.sanitized_content;
         } else {
           badge.className = 'badge-clean';
-          badge.textContent = 'PASSED (CLEAN)';
+          badge.textContent = 'PASSED (BENIGN INPUT)';
           let addrInfo = '';
           if (data.crypto_addresses && data.crypto_addresses.length > 0) {
             const addrList = data.crypto_addresses.map(a => `${a.address.slice(0, 10)}... (risk: ${a.risk_score})`).join(', ');
             addrInfo = ` 🔍 Extracted crypto addresses: ${addrList}.`;
           }
-          msg.textContent = `✅ No injection detected. Content passed safely to downstream agent.${addrInfo} (Note: To claim the vault, an entry must be submitted on-chain with an active adversarial hijack that bypasses the firewall in strict mode).`;
-          out.textContent = data.sanitized_content || '[NO THREAT DETECTED]';
+          msg.textContent = `ℹ️ Benign Input: Content passed safely to downstream agent.${addrInfo} (Challenge Rule: Benign non-adversarial text cannot claim the bounty — an entry must demonstrate an active adversarial hijack that slips past strict mode).`;
+          out.textContent = data.sanitized_content || '[BENIGN CONTENT SAFELY PASSED TO AGENT]';
         }
       } catch (err) {
         alert('Test error: ' + err.message);
@@ -584,9 +585,9 @@ curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
           out.textContent = data.sanitized_content;
         } else {
           badge.className = 'badge-clean';
-          badge.textContent = 'PASSED (CLEAN)';
-          msg.textContent = `✅ Payload passed with status clean. If your payload contained an active instruction override, you have cracked the vault!`;
-          out.textContent = data.sanitized_content || '[NO THREAT DETECTED]';
+          badge.textContent = 'PASSED (BENIGN INPUT)';
+          msg.textContent = `ℹ️ Benign Input: Content passed safely to downstream agent. No instruction override or prompt injection attempt was detected in this transaction — the vault challenge remains unclaimed. (Challenge Rule: Benign non-adversarial inputs do not qualify for the bounty).`;
+          out.textContent = data.sanitized_content || '[BENIGN CONTENT PASSED TO AGENT]';
         }
 
       } catch (err) {
