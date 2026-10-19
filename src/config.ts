@@ -9,8 +9,8 @@ export const DESCRIPTION = 'Deterministic prompt-injection firewall, Base token 
 export const TOOL_DESCRIPTION = 'Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits. Cost: 0.010 USDC on Base. Deterministic rules have incomplete coverage; results do not guarantee safety.';
 
 export const Input = z.strictObject({
-  content: z.string().min(1).max(50000),
-  strict_mode: z.boolean().default(true),
+  content: z.string().min(1).max(50000).describe('Untrusted text, external prompt, scraped content, or tool output to inspect and scrub for injection exploits (1-50000 characters).'),
+  strict_mode: z.boolean().default(true).describe('Whether to enforce strict blocking mode (true = hard-block injection attempts, false = sanitize and strip threat tokens while preserving safe text). Defaults to true.'),
 });
 
 export const inputJsonSchema = {
