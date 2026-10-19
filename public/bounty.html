@@ -109,6 +109,22 @@
     }
     .btn-fire { background: var(--accent); color: #000; }
     .btn-fire:hover { background: var(--accent-bright); transform: translateY(-1px); }
+    .btn-secondary { background: #1f2937; color: #f3f4f6; border: 1px solid var(--border); font-size: 0.9rem; padding: 0.7rem 1.25rem; }
+    .btn-secondary:hover { background: #374151; color: #fff; }
+    .btn-base { background: #0052ff; color: #fff; box-shadow: 0 4px 15px rgba(0, 82, 255, 0.4); font-size: 0.95rem; padding: 0.7rem 1.4rem; }
+    .btn-base:hover { background: #1a65ff; transform: translateY(-1px); box-shadow: 0 6px 22px rgba(0, 82, 255, 0.6); }
+    .btn-base:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .receipt-banner {
+      background: rgba(0, 82, 255, 0.15);
+      border: 1px solid #0052ff;
+      border-radius: 0.5rem;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 0.85rem;
+      color: #bfdbfe;
+      font-family: var(--font-mono);
+      display: none;
+    }
     
     .action-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.75rem; margin-top: 1rem; }
     
@@ -221,13 +237,20 @@
       <textarea id="payload" placeholder="Type or paste your prompt injection payload here..."></textarea>
 
       <div class="action-row">
-        <div style="font-size: 0.85rem; color: var(--muted);">
-          Interactive Simulator Mode (Evaluated live by CanaryGuard Engine)
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+          <span class="badge" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.8rem;">
+            🧪 Free Quota: <strong id="trialsLeft">3</strong>/3 remaining
+          </span>
+          <span style="font-size: 0.8rem; color: var(--muted);">(Simulator evaluation only)</span>
         </div>
-        <button class="btn btn-fire" onclick="fireTest()">Test Attack Against Vault ⚡</button>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button id="btnFree" class="btn btn-secondary" onclick="fireTest()">Run Free Simulator ⚡</button>
+          <button id="btnPaidBase" class="btn btn-base" onclick="firePaidBase()">🔵 Pay 0.010 USDC &amp; Fire Live Attempt (Gasless on Base)</button>
+        </div>
       </div>
 
       <div id="resultBox" class="result-box">
+        <div id="receiptBanner" class="receipt-banner"></div>
         <div class="result-header">
           <div id="verdictBadge" class="badge-blocked">INTERCEPTED</div>
           <div id="latencyVal" style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--muted);">Latency: 0.08ms</div>
@@ -260,6 +283,43 @@ curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
   </div>
 
   <script>
+    const MAX_FREE_TRIALS = 3;
+
+    function getTrialsUsed() {
+      return parseInt(localStorage.getItem('canary_trials_used') || '0', 10);
+    }
+
+    function recordTrial() {
+      const next = getTrialsUsed() + 1;
+      localStorage.setItem('canary_trials_used', next.toString());
+      updateTrialUI();
+    }
+
+    function updateTrialUI() {
+      const used = getTrialsUsed();
+      const remaining = Math.max(0, MAX_FREE_TRIALS - used);
+      const counterEl = document.getElementById('trialsLeft');
+      const btnFree = document.getElementById('btnFree');
+      const btnPaid = document.getElementById('btnPaidBase');
+      if (counterEl) counterEl.textContent = remaining.toString();
+      if (btnFree) {
+        if (remaining <= 0) {
+          btnFree.disabled = true;
+          btnFree.textContent = 'Free Quota Used (3/3)';
+          btnFree.style.opacity = '0.5';
+          btnFree.style.cursor = 'not-allowed';
+          if (btnPaid) {
+            btnPaid.style.boxShadow = '0 0 25px rgba(0, 82, 255, 0.8)';
+          }
+        } else {
+          btnFree.disabled = false;
+          btnFree.textContent = 'Run Free Simulator ⚡';
+          btnFree.style.opacity = '1';
+          btnFree.style.cursor = 'pointer';
+        }
+      }
+    }
+
     function setPayload(val, mode) {
       document.getElementById('payload').value = val;
       if (mode === 'sanitize') {
@@ -270,11 +330,18 @@ curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
     }
 
     async function fireTest() {
+      if (getTrialsUsed() >= MAX_FREE_TRIALS) {
+        alert("Free evaluation quota exhausted (3/3 used)! To test live against the vault and compete for the $5.00+ USDC prize pot, click 'Pay 0.010 USDC & Fire Live Attempt'.");
+        const btnPaid = document.getElementById('btnPaidBase');
+        if (btnPaid) btnPaid.focus();
+        return;
+      }
+
       const text = document.getElementById('payload').value.trim();
       if (!text) return alert("Please enter a payload to test!");
 
       const isStrict = document.getElementById('modeStrict').checked;
-      const btn = document.querySelector('.btn-fire');
+      const btn = document.getElementById('btnFree');
       btn.textContent = 'Inspecting...';
       btn.disabled = true;
 
@@ -288,14 +355,18 @@ curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
         const data = await res.json();
         const duration = (performance.now() - t0).toFixed(2);
 
+        recordTrial();
+
         const box = document.getElementById('resultBox');
         const badge = document.getElementById('verdictBadge');
         const msg = document.getElementById('msgVal');
         const out = document.getElementById('cleanOutput');
         const lat = document.getElementById('latencyVal');
+        const receiptEl = document.getElementById('receiptBanner');
 
+        if (receiptEl) receiptEl.style.display = 'none';
         box.style.display = 'block';
-        lat.textContent = `Latency: ${duration}ms`;
+        lat.textContent = `Latency: ${duration}ms (Simulator)`;
 
         if (data.status === 'blocked') {
           badge.className = 'badge-blocked';
@@ -315,16 +386,219 @@ curl -X POST https://canaryguard-402.onrender.com/v1/sanitize \
             const addrList = data.crypto_addresses.map(a => `${a.address.slice(0, 10)}... (risk: ${a.risk_score})`).join(', ');
             addrInfo = ` 🔍 Extracted crypto addresses: ${addrList}.`;
           }
-          msg.textContent = `✅ No injection detected. Content passed safely to downstream agent.${addrInfo} (Note: To claim the vault, an entry must contain an active adversarial hijack that bypasses the firewall in strict mode).`;
+          msg.textContent = `✅ No injection detected. Content passed safely to downstream agent.${addrInfo} (Note: To claim the vault, an entry must be submitted on-chain with an active adversarial hijack that bypasses the firewall in strict mode).`;
           out.textContent = data.sanitized_content || '[NO THREAT DETECTED]';
         }
       } catch (err) {
         alert('Test error: ' + err.message);
       } finally {
-        btn.textContent = 'Test Attack Against Vault ⚡';
-        btn.disabled = false;
+        updateTrialUI();
       }
     }
+
+    async function firePaidBase() {
+      const text = document.getElementById('payload').value.trim();
+      if (!text) return alert("Please enter a payload to test!");
+
+      if (!window.ethereum) {
+        return alert("MetaMask, Coinbase Wallet, or a Web3 browser extension is required for 1-click on-chain payment. Please install one to test gasless on Base, or submit via curl.");
+      }
+
+      const isStrict = document.getElementById('modeStrict').checked;
+      const btnPaid = document.getElementById('btnPaidBase');
+      const originalText = btnPaid.innerHTML;
+      btnPaid.disabled = true;
+      btnPaid.innerHTML = 'Connecting Wallet... ⏳';
+
+      try {
+        // 1. Request user account
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (!accounts || !accounts[0]) throw new Error("No wallet account selected");
+        const account = accounts[0];
+
+        btnPaid.innerHTML = 'Switching to Base Chain... ⏳';
+
+        // 2. Ensure connected to Base Mainnet (chainId: 8453 / 0x2105)
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x2105' }]
+          });
+        } catch (switchErr) {
+          if (switchErr.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: '0x2105',
+                chainName: 'Base',
+                nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                rpcUrls: ['https://mainnet.base.org'],
+                blockExplorerUrls: ['https://basescan.org']
+              }]
+            });
+          } else {
+            throw switchErr;
+          }
+        }
+
+        btnPaid.innerHTML = 'Requesting Challenge... ⏳';
+
+        // 3. Query 402 challenge terms from /v1/sanitize
+        const challengeRes = await fetch('/v1/sanitize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: text, strict_mode: isStrict })
+        });
+
+        const reqHeader = challengeRes.headers.get('PAYMENT-REQUIRED') || challengeRes.headers.get('payment-required');
+        if (!reqHeader) throw new Error("Failed to retrieve x402 payment requirements from server");
+        const challenge = JSON.parse(atob(reqHeader));
+
+        btnPaid.innerHTML = 'Sign 0.010 USDC (Gasless)... ✍️';
+
+        // 4. Generate 32-byte hex nonce & expiry
+        const randomBytes = new Uint8Array(32);
+        window.crypto.getRandomValues(randomBytes);
+        const nonce = '0x' + Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+        const validBefore = String(Math.floor(Date.now() / 1000) + 3600);
+
+        const eip712Data = {
+          types: {
+            EIP712Domain: [
+              { name: "name", type: "string" },
+              { name: "version", type: "string" },
+              { name: "chainId", type: "uint256" },
+              { name: "verifyingContract", type: "address" }
+            ],
+            TransferWithAuthorization: [
+              { name: "from", type: "address" },
+              { name: "to", type: "address" },
+              { name: "value", type: "uint256" },
+              { name: "validAfter", type: "uint256" },
+              { name: "validBefore", type: "uint256" },
+              { name: "nonce", type: "bytes32" }
+            ]
+          },
+          domain: {
+            name: "USD Coin",
+            version: "2",
+            chainId: 8453,
+            verifyingContract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+          },
+          primaryType: "TransferWithAuthorization",
+          message: {
+            from: account,
+            to: "0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1",
+            value: "10000",
+            validAfter: "0",
+            validBefore: validBefore,
+            nonce: nonce
+          }
+        };
+
+        const sig = await window.ethereum.request({
+          method: 'eth_signTypedData_v4',
+          params: [account, JSON.stringify(eip712Data)]
+        });
+
+        btnPaid.innerHTML = 'Settling on Base via Coinbase CDP... 🚀';
+
+        // 5. Build x402 signature payload
+        const paymentPayload = {
+          x402Version: 2,
+          resource: challenge.resource,
+          accepted: challenge.accepts[0],
+          payload: {
+            signature: sig,
+            authorization: {
+              from: account,
+              to: "0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1",
+              value: "10000",
+              validAfter: "0",
+              validBefore: validBefore,
+              nonce: nonce
+            }
+          },
+          extensions: challenge.extensions
+        };
+
+        const paymentSigHeader = btoa(unescape(encodeURIComponent(JSON.stringify(paymentPayload))));
+
+        // 6. Submit paid attempt
+        const t0 = performance.now();
+        const paidRes = await fetch('/v1/sanitize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'PAYMENT-SIGNATURE': paymentSigHeader
+          },
+          body: JSON.stringify({ content: text, strict_mode: isStrict })
+        });
+
+        if (!paidRes.ok) {
+          const errData = await paidRes.json().catch(() => ({}));
+          throw new Error(errData.error || `Payment settlement failed with status ${paidRes.status}`);
+        }
+
+        const data = await paidRes.json();
+        const duration = (performance.now() - t0).toFixed(2);
+
+        // 7. Parse on-chain settlement receipt
+        let txHash = '';
+        let payer = account;
+        try {
+          const respHeader = paidRes.headers.get('PAYMENT-RESPONSE') || paidRes.headers.get('payment-response');
+          if (respHeader) {
+            const receipt = JSON.parse(atob(respHeader));
+            if (receipt.transaction) txHash = receipt.transaction;
+            if (receipt.payer) payer = receipt.payer;
+          }
+        } catch {}
+
+        const box = document.getElementById('resultBox');
+        const badge = document.getElementById('verdictBadge');
+        const msg = document.getElementById('msgVal');
+        const out = document.getElementById('cleanOutput');
+        const lat = document.getElementById('latencyVal');
+        const receiptEl = document.getElementById('receiptBanner');
+
+        box.style.display = 'block';
+        lat.textContent = `Latency: ${duration}ms (Base Settled)`;
+
+        if (receiptEl) {
+          receiptEl.style.display = 'block';
+          receiptEl.innerHTML = `💰 <strong>0.010 USDC Settled On-Chain!</strong><br>` +
+            (txHash ? `Transaction: <a href="https://basescan.org/tx/${txHash}" target="_blank" style="color: #93c5fd; text-decoration: underline;">${txHash.slice(0, 18)}... (View on BaseScan ↗)</a><br>` : '') +
+            `Payer: <code>${payer}</code> | Facilitator: <em>Coinbase CDP (Gasless $0 ETH)</em> | Bounty Pot: <strong>+$0.010 USDC</strong>`;
+        }
+
+        if (data.status === 'blocked') {
+          badge.className = 'badge-blocked';
+          badge.textContent = 'INTERCEPTED & BLOCKED';
+          msg.textContent = `🛡️ CanaryGuard neutralized threats: ${(data.threats_neutralized || []).join(', ') || 'instruction_override'}. The attempt was verified on-chain and safely blocked!`;
+          out.textContent = data.sanitized_content ? data.sanitized_content : '[CONTENT DROPPED ENTIRELY IN STRICT MODE]';
+        } else if (data.status === 'sanitized') {
+          badge.className = 'badge-sanitized';
+          badge.textContent = 'SANITIZED & PRESERVED';
+          msg.textContent = `🛡️ CanaryGuard scrubbed threat tokens: ${(data.threats_neutralized || []).join(', ')}. The attempt was verified on-chain.`;
+          out.textContent = data.sanitized_content;
+        } else {
+          badge.className = 'badge-clean';
+          badge.textContent = 'PASSED (CLEAN)';
+          msg.textContent = `✅ Payload passed with status clean. If your payload contained an active instruction override, you have cracked the vault!`;
+          out.textContent = data.sanitized_content || '[NO THREAT DETECTED]';
+        }
+
+      } catch (err) {
+        alert("Payment / Test Error: " + (err.message || err));
+      } finally {
+        btnPaid.disabled = false;
+        btnPaid.innerHTML = originalText;
+      }
+    }
+
+    // Initialize trial UI on load
+    window.addEventListener('DOMContentLoaded', updateTrialUI);
   </script>
 </body>
 </html>
