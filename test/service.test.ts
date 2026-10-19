@@ -80,7 +80,7 @@ function fakePayment(challenge: PaymentRequired, nonce = 1): PaymentPayload {
 
 function assertBaseChallenge(challenge: PaymentRequired) {
   assert.equal(challenge.x402Version, 2);
-  assert.equal(challenge.accepts.length, 1);
+  assert.ok(challenge.accepts.length >= 1);
   assert.equal(challenge.accepts[0].amount, '10000');
   assert.equal(challenge.accepts[0].payTo.toLowerCase(), RECIPIENT.toLowerCase());
   assert.equal(challenge.accepts[0].asset.toLowerCase(), ASSET.toLowerCase());

@@ -28,16 +28,39 @@ export type SanitizeResult = {
   };
 };
 
-// Includes zero-width, bidi-formatting, and soft-hyphen characters that can conceal a command.
-const INVISIBLE_CHARACTERS = /[\u00ad\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/gu;
-const ROLE_DELIMITER = /\[\/?INST\]|<\|(?:im_start|im_end|system|developer|assistant|user)\|>|<<\/?SYS>>/i;
-const ROLE_PREFIX = /(?:^|[\r\n])\s*(?:system|developer|assistant)\s*:/i;
-const INSTRUCTION_OVERRIDE = /\b(?:(?:ignore|disregard|forget|override)\s+(?:(?:all|any|the|your|our)\s+)*(?:previous|prior|earlier|above|system|developer)\s+(?:instructions?|prompts?|rules?|messages?)|(?:you\s+(?:are\s+to|must|will)\s+)?(?:do\s+(?:what|as)\s+i\s+(?:say|tell\s+you)|obey(?:\s+(?:all|only|my)\s+(?:commands?|instructions?))?)|follow\s+only\s+(?:my|these)\s+instructions?)\b/i;
-const WALLET_ASSET_COMMAND = /\b(?:send|transfer|wire|move|drain|empty|sweep|withdraw|flush|dump|forward)\s+(?:(?:all|every|entire|the|your|my|our|any|remaining)\s+)*(?:wallet|treasury|vault|funds?|balances?|assets?|tokens?|crypto|eth|usdc|usdt|coins?)\b/i;
-const WALLET_DESTINATION_COMMAND = /\b(?:send|transfer|wire|move|drain|empty|sweep|withdraw|flush|forward)\s+(?:(?:it|them|all|funds?|balances?|tokens?|assets?|the\s+wallet|the\s+vault)\s+)*(?:to|into)\s+(?:(?:the\s+following|this|my|the|an?)\s+)*(?:(?:wallet|recipient|destination)\s+)?(?:address\s*(?::|\s+)?)?0x[\da-f]{4,40}\b/i;
+// Includes zero-width, bidi-formatting, variation selectors, and soft-hyphen characters that can conceal a command.
+const INVISIBLE_CHARACTERS = /[\u00ad\u180e\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufe00-\ufe0f\ufeff]/gu;
+const ROLE_DELIMITER = /\[\/?(?:INST|AVAILABLE_TOOLS|TOOL_RESULTS|TOOL_CALLS|PROMPT|SYSTEM|CONTEXT)\]|<\|(?:im_start|im_end|system|developer|assistant|user|start_header_id|end_header_id|eot_id|begin_of_text|end_of_text)\b|<<\/?(?:SYS|SYSTEM)>>|<\/?(?:system|developer|assistant|instruction|instructions|context|prompt_context|antThinking|thinking)>/i;
+const ROLE_PREFIX = /(?:^|[\r\n])\s*(?:#{1,4}\s*)?(?:system|developer|assistant|admin|root|superuser|operator|jailbreak|DAN|instruction|prompt)\s*:/i;
+const INSTRUCTION_OVERRIDE = /\b(?:(?:ignore|disregard|forget|override|bypass|supersede|discard|neglect|abandon|drop|clear|reset|cancel|revoke|overwrite|circumvent|violate|disable|suspend|deactivate)\s+(?:(?:all|any|the|your|our|every|these|those)\s+)*(?:previous|prior|earlier|above|system|developer|safety|guardrail|original|initial)\s+(?:instructions?|prompts?|rules?|messages?|directives?|guidelines?|constraints?|parameters?|policies|filters?|guardrails?|configuration|settings|restrictions?|programming)|(?:you\s+(?:are\s+to|must|will|shall)\s+)?(?:do\s+(?:what|as)\s+i\s+(?:say|tell\s+you)|obey(?:\s+(?:all|only|my)\s+(?:commands?|instructions?))?)|follow\s+only\s+(?:my|these)\s+instructions?|from\s+now\s+on\s+(?:you\s+(?:will|must|shall)|act\s+as|treat|regard)|your\s+new\s+(?:instructions?|rules?|role|task)\s+(?:is|are)|new\s+instructions?\s*:|(?:reveal|dump|print|output|display|leak|show|repeat)\s+(?:(?:the|your|all|every)\s+)*(?:system\s+prompt|initial\s+instructions?|hidden\s+prompt|above\s+text|instructions\s+verbatim|preceding\s+prompt|internal\s+instructions?))\b/i;
+const JAILBREAK_ROLEPLAY = /\b(?:(?:act\s+as|pretend\s+(?:to\s+be|you\s+are)|simulate|roleplay\s+as|you\s+are\s+now)\s+(?:an?\s+)*(?:unrestricted|jailbreak(?:ed)?|DAN|developer|root|admin|god\s+mode|unfiltered|evil|anarchist|hypothetical)|(?:developer\s+mode|maintenance\s+mode|debug\s+mode|sandbox\s+mode|override\s+mode)\s+(?:enabled|activated|on|true)|do\s+anything\s+now|jailbreak\s+mode)\b/i;
+const MULTILINGUAL_OVERRIDE = /\b(?:(?:ignora|olvida|anula|descarta)\s+(?:todas?\s+las?\s+)?(?:instrucciones|reglas|directrices)|(?:ignorez?|oubli(?:ez|er)|annulez?)\s+(?:toutes?\s+les?\s+)?(?:instructions?|règles?|directives?)|(?:ignoriere?|vergiss|übergehe)\s+(?:alle\s+)?(?:vorherigen?\s+)?(?:anweisungen?|regeln?)|(?:игнорируй|забудь|отмени)\s+(?:все\s+)?(?:предыдущие\s+)?(?:инструкции|правила)|(?:ignora|dimentica|annulla)\s+(?:tutte\s+le\s+)?(?:istruzioni|regole)|(?:ignore|esqueça|anule)\s+(?:todas\s+as\s+)?(?:instruções|regras))\b/i;
+const WALLET_ASSET_COMMAND = /\b(?:send|transfer|wire|move|drain|empty|sweep|withdraw|flush|dump|forward|approve|permit|authorize|disburse|pay|release|execute)\s+(?:(?:all|every|entire|the|your|my|our|any|remaining)\s+)*(?:wallet|treasury|vault|funds?|balances?|assets?|tokens?|crypto|eth|usdc|usdt|coins?|sol|solana|lamports|wei)\b/i;
+const WALLET_DESTINATION_COMMAND = /\b(?:send|transfer|wire|move|drain|empty|sweep|withdraw|flush|forward|pay|disburse)\s+(?:(?:it|them|all|funds?|balances?|tokens?|assets?|the\s+wallet|the\s+vault)\s+)*(?:to|into)\s+(?:(?:the\s+following|this|my|the|an?)\s+)*(?:(?:wallet|recipient|destination)\s+)?(?:address\s*(?::|\s+)?)?(?:0x[\da-f]{4,40}|[1-9A-HJ-NP-Za-km-z]{32,44})\b/i;
 const EVM_ADDRESS = /\b0x[\da-f]{40}\b/gi;
 const ACTIVE_ELEMENTS = 'script, style, template, noscript, iframe, object, embed, svg, math, head, meta, link, base';
 const BLOCK_ELEMENTS = 'p, div, section, article, header, footer, main, aside, nav, li, tr, h1, h2, h3, h4, h5, h6, blockquote, pre';
+
+function deobfuscate(value: string): string {
+  return value
+    .replace(/[аА]/g, 'a')
+    .replace(/[сС]/g, 'c')
+    .replace(/[еЕ]/g, 'e')
+    .replace(/[оО]/g, 'o')
+    .replace(/[рР]/g, 'p')
+    .replace(/[ѕЅ]/g, 's')
+    .replace(/[хХ]/g, 'x')
+    .replace(/[уУ]/g, 'y')
+    .replace(/[іІ]/g, 'i')
+    .replace(/[јЈ]/g, 'j')
+    .replace(/[@]/g, 'a')
+    .replace(/[$]/g, 's')
+    .replace(/[0]/g, 'o')
+    .replace(/[1!|]/g, 'i')
+    .replace(/[3]/g, 'e')
+    .replace(/[4]/g, 'a')
+    .replace(/[5]/g, 's');
+}
 
 function matchesWalletCommand(value: string): boolean {
   return WALLET_ASSET_COMMAND.test(value) || WALLET_DESTINATION_COMMAND.test(value);
@@ -45,10 +68,13 @@ function matchesWalletCommand(value: string): boolean {
 
 function commandThreats(value: string): string[] {
   const normalized = value.normalize('NFKC');
+  const deobf = deobfuscate(normalized);
   const found: string[] = [];
-  if (ROLE_DELIMITER.test(normalized) || ROLE_PREFIX.test(normalized)) found.push('role_delimiter_override');
-  if (INSTRUCTION_OVERRIDE.test(normalized)) found.push('instruction_override');
-  if (matchesWalletCommand(normalized)) found.push('wallet_transfer_command');
+  if (ROLE_DELIMITER.test(normalized) || ROLE_PREFIX.test(normalized) || ROLE_DELIMITER.test(deobf) || ROLE_PREFIX.test(deobf)) found.push('role_delimiter_override');
+  if (INSTRUCTION_OVERRIDE.test(normalized) || INSTRUCTION_OVERRIDE.test(deobf)) found.push('instruction_override');
+  if (JAILBREAK_ROLEPLAY.test(normalized) || JAILBREAK_ROLEPLAY.test(deobf)) found.push('jailbreak_roleplay_detected');
+  if (MULTILINGUAL_OVERRIDE.test(normalized)) found.push('multilingual_instruction_override');
+  if (matchesWalletCommand(normalized) || matchesWalletCommand(deobf)) found.push('wallet_transfer_command');
   return found;
 }
 
@@ -111,7 +137,15 @@ function scrubCommandLines(value: string): string {
   const blockedMarker = '[CANARY_REMOVED_INSTRUCTION]';
   let marked = value.normalize('NFKC');
   // Mark every line touched by a match: a command may be split over several lines.
-  const patterns = [ROLE_DELIMITER, /^[ \t]*(?:system|developer|assistant)[ \t]*:/m, INSTRUCTION_OVERRIDE, WALLET_ASSET_COMMAND, WALLET_DESTINATION_COMMAND];
+  const patterns = [
+    ROLE_DELIMITER,
+    ROLE_PREFIX,
+    INSTRUCTION_OVERRIDE,
+    JAILBREAK_ROLEPLAY,
+    MULTILINGUAL_OVERRIDE,
+    WALLET_ASSET_COMMAND,
+    WALLET_DESTINATION_COMMAND,
+  ];
   for (const pattern of patterns) {
     const flags = pattern.multiline ? 'gim' : 'gi';
     marked = marked.replace(new RegExp(pattern.source, flags), match => match.split('\n').map(() => blockedMarker).join('\n'));
@@ -163,7 +197,7 @@ export function sanitizeContent(content: string, strictMode = true): SanitizeRes
       : scrubCommandLines(sanitizedContent);
   }
   // Remove any surviving role tokens even when formatting split a risky command across lines.
-  sanitizedContent = sanitizedContent.replace(/\[\/?INST\]|<\|(?:im_start|im_end|system|developer|assistant|user)\|>|<<\/?SYS>>/gi, '');
+  sanitizedContent = sanitizedContent.replace(new RegExp(ROLE_DELIMITER.source, 'gi'), '');
   sanitizedContent = tidy(sanitizedContent);
 
   let riskScore = 0.01;
@@ -172,6 +206,8 @@ export function sanitizeContent(content: string, strictMode = true): SanitizeRes
   if (findings.has('active_html_removed') || findings.has('unsafe_html_attributes_removed')) riskScore = Math.max(riskScore, 0.4);
   if (detectedCommands.has('role_delimiter_override')) riskScore = Math.max(riskScore, 0.85);
   if (detectedCommands.has('instruction_override')) riskScore = Math.max(riskScore, 0.95);
+  if (detectedCommands.has('jailbreak_roleplay_detected')) riskScore = Math.max(riskScore, 0.96);
+  if (detectedCommands.has('multilingual_instruction_override')) riskScore = Math.max(riskScore, 0.95);
   if (detectedCommands.has('wallet_transfer_command')) riskScore = Math.max(riskScore, 0.98);
   for (const address of addresses) riskScore = Math.max(riskScore, address.risk_score);
 

@@ -28,18 +28,24 @@ export async function createPayments(env = process.env, provided?: FacilitatorCl
       ? sanitizeContent('Example external text')
       : spec.outputExample;
 
-    const discovery = declareDiscoveryExtension({
+    const discoveryPost = declareDiscoveryExtension({
       bodyType: 'json',
       input: spec.inputExample,
       inputSchema: spec.inputSchema,
       output: { example: outputSample },
     });
 
+    const discoveryGet = declareDiscoveryExtension({
+      input: spec.inputExample,
+      inputSchema: spec.inputSchema,
+      output: { example: outputSample },
+    });
+
     if (spec.path === '/v1/sanitize') {
-      primaryDiscovery = discovery;
+      primaryDiscovery = discoveryPost;
     }
 
-    const route = {
+    const baseRoute = {
       accepts: [paymentOption(config.payTo, spec.amountMicro)],
       resource: config.publicUrl + spec.path,
       description: spec.description.slice(0, 440),
@@ -47,11 +53,10 @@ export async function createPayments(env = process.env, provided?: FacilitatorCl
       serviceName: 'CanaryGuard 402',
       tags: spec.tags,
       unpaidResponseBody: () => ({ contentType: 'application/json', body: { error: 'payment_required' } }),
-      extensions: discovery,
     };
 
-    routesConfig[`POST ${spec.path}`] = route;
-    routesConfig[`GET ${spec.path}`] = route;
+    routesConfig[`POST ${spec.path}`] = { ...baseRoute, extensions: discoveryPost };
+    routesConfig[`GET ${spec.path}`] = { ...baseRoute, extensions: discoveryGet };
   }
 
   const httpServer = new x402HTTPResourceServer(server, routesConfig);
