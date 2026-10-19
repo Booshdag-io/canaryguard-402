@@ -247,11 +247,13 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   });
 
   // Compliance, SEO & Metadata Routes
-  app.get('/robots.txt', (_req, res) => {
+  const handleRobots = (_req: express.Request, res: express.Response) => {
     res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /v1/telemetry/\nSitemap: https://canaryguard-402.onrender.com/sitemap.xml\n');
-  });
+  };
+  app.get(['/robots.txt', /^\/robots\.txt.*$/], handleRobots);
+  app.head(['/robots.txt', /^\/robots\.txt.*$/], handleRobots);
 
-  app.get('/sitemap.xml', (_req, res) => {
+  const handleSitemap = (_req: express.Request, res: express.Response) => {
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://canaryguard-402.onrender.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
@@ -261,7 +263,9 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   <url><loc>https://canaryguard-402.onrender.com/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://canaryguard-402.onrender.com/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 </urlset>`);
-  });
+  };
+  app.get(['/sitemap.xml', /^\/sitemap\.xml.*$/], handleSitemap);
+  app.head(['/sitemap.xml', /^\/sitemap\.xml.*$/], handleSitemap);
 
   app.get(['/pricing', '/plans'], (_req, res) => {
     res.json({
@@ -1631,8 +1635,26 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   const handler = await mcpHandler(payments.server, payments.config.publicUrl, payments.config.payTo);
 
   const mcpJsonRpcInterceptor = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    // Prevent 406 on streamable HTTP if Accept header is missing or wildcard
+    if (!req.headers.accept || req.headers.accept === '*/*') {
+      req.headers.accept = 'application/json';
+    }
     const method = req.body?.method;
     const id = req.body?.id ?? 1;
+
+    // Handle empty JSON probe or missing method gracefully
+    if (!method || Object.keys(req.body || {}).length === 0) {
+      return res.json({
+        jsonrpc: '2.0',
+        id,
+        result: {
+          protocolVersion: '2024-11-05',
+          serverInfo: { name: 'canaryguard-402', version: SERVICE_VERSION },
+          capabilities: { tools: { listChanged: false } },
+          tools: canaryMcpTools,
+        },
+      });
+    }
 
     if (method === 'initialize') {
       return res.json({
