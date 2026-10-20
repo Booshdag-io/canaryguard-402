@@ -330,7 +330,17 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
       amount: s.amountMicro,
       description: s.description,
     })),
-    mcp: { url: payments.config.publicUrl + '/mcp', tool: 'canary_sanitize', tools_count: ENDPOINT_SPECS.length, transport: 'streamable-http' },
+    mcp: {
+      url: payments.config.publicUrl + '/mcp',
+      tools_count: ENDPOINT_SPECS.length,
+      primary_tool: 'canary_sanitize',
+      tools: ENDPOINT_SPECS.map(s => ({
+        name: s.operationId === 'sanitizeContent' ? 'canary_sanitize' : s.operationId,
+        description: s.description,
+        cost: `${s.priceUsd} USDC`,
+      })),
+      transport: 'streamable-http',
+    },
     upstream_services: {
       stealthguard_402: {
         name: 'StealthGuard-402',
