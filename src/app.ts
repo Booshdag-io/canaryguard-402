@@ -447,6 +447,61 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     res.json(canaryServerCard);
   });
 
+  const canaryAgentRegistration = {
+    type: 'https://eips.ethereum.org/EIPS/eip-8004#registration-v1',
+    name: 'CanaryGuard 402 — Autonomous Prompt-Injection Firewall & Security Gateway',
+    description: 'Deterministic prompt-injection firewall, neural deobfuscation engine, EIP-712 typed signature auditor, and autonomous agent safety gateway on Base and Solana, gated by x402 v2.',
+    image: 'https://canaryguard-402.onrender.com/logo.png',
+    version: SERVICE_VERSION,
+    url: payments.config.publicUrl,
+    provider: {
+      name: 'Kurox Real',
+      url: payments.config.publicUrl,
+      wallet: payments.config.payTo,
+    },
+    active: true,
+    capabilities: {
+      streaming: true,
+      pushNotifications: false,
+    },
+    erc8004: {
+      identity_registry: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
+      reputation_registry: '0x8004BAa17C55a88189AE136b182e5fdA19dE9b63',
+      agent_card: payments.config.publicUrl + '/.well-known/agent-card.json',
+    },
+    securitySchemes: [
+      {
+        type: 'x402',
+        description: 'EIP-3009 TransferWithAuthorization on Base Mainnet (0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913) & SPL TransferChecked on Solana Mainnet (EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v).',
+      },
+    ],
+    services: [
+      {
+        name: 'MCP',
+        endpoint: payments.config.publicUrl + '/mcp',
+        version: '2024-11-05',
+      },
+      {
+        name: 'HTTP',
+        endpoint: payments.config.publicUrl,
+        version: '2.0',
+      },
+    ],
+    supportedChains: [
+      NETWORK,
+      SOLANA_NETWORK,
+    ],
+  };
+
+  app.get([
+    '/.well-known/agent-registration.json',
+    '/.well-known/agent-card.json',
+    '/.well-known/agent.json',
+    '/.well-known/erc8004.json',
+  ], (_req, res) => {
+    res.json(canaryAgentRegistration);
+  });
+
   // Demo endpoint used by internal OpenAPI contract test suite (excluded from OpenAPI spec)
   app.post('/v1/demo-sanitize', (req, res) => {
     const content = (req.body?.content || 'Sample text').toString();
