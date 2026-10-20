@@ -491,6 +491,13 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
       NETWORK,
       SOLANA_NETWORK,
     ],
+    registrations: [
+      {
+        agentId: 335687,
+        agentRegistry: 'eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
+      },
+    ],
+    supportedTrust: ['reputation'],
   };
 
   app.get([
