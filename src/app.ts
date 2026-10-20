@@ -195,6 +195,23 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   // Health and Uptime Probes
   app.get(['/health', '/ping'], (_req, res) => res.json({ status: 'ok', service: 'canaryguard-402', version: SERVICE_VERSION }));
 
+  // Corporate & Trust Probes (/careers, /jobs, /join, /about) for reputation crawlers
+  app.get(['/careers', '/careers/', '/jobs', '/join', '/about'], (_req, res) => {
+    res.json({
+      organization: 'Kurox Fleet',
+      service: 'CanaryGuard 402',
+      status: 'autonomous_ai_fleet',
+      agent_id: 335687,
+      network: 'eip155:8453',
+      erc8004_contract: '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432',
+      operator_vault: '0x73279fa4BadA7CAC888c62CDa4f5c8104765f6f1',
+      open_roles: 'Autonomous AI Agents & Specialized MCP Oracles',
+      github: 'https://github.com/ak10082247-max',
+      documentation: '/openapi.json',
+      discovery: '/.well-known/x402.json'
+    });
+  });
+
   // Flight Recorder API (Excluded from OpenAPI schema)
   app.get('/v1/telemetry/deliveries', (_req, res) => {
     const allDeliveries = getRecentDeliveries();
@@ -1382,135 +1399,25 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   app.get('/v1/yield/safe-allocation', handleSafeYieldAllocation);
 
   // ============================================================================
-  // 6 NANSEN-COMPATIBLE HIGH-VOLUME X402 V2 ROUTES ($0.010 USDC — 80% DISCOUNT)
+  // 6 NANSEN-COMPATIBLE ROUTES CANONICALLY HOSTED & MONETIZED ON RUGSHIELD-402
+  // HTTP 307 Temporary Redirect preserves POST method & body to route callers directly
+  // to RugShield's paid x402 paywall ($0.010 USDC) preventing free data leakage.
   // ============================================================================
 
-  const handleNansenTokenScreener = (req: express.Request, res: express.Response) => {
-    const raw = req.method === 'POST' ? req.body : req.query;
-    const token = (raw?.token_address || raw?.address || raw?.token || 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263').toString().trim();
-    res.locals.sanitized = true;
-    res.json({
-      status: 'success',
-      chain: token.startsWith('0x') ? 'base' : 'solana',
-      queried_token: token,
-      tokens: [
-        { symbol: 'BONK', chain: 'solana', address: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263', price_usd: 0.000024, liquidity_usd: 18400000, volume_24h_usd: 64200000, honeypot: false, smart_money_inflow_usd: 412000 },
-        { symbol: 'VIRTUAL', chain: 'base', address: '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b', price_usd: 2.85, liquidity_usd: 78500000, volume_24h_usd: 54100000, honeypot: false, smart_money_inflow_usd: 890000 },
-      ],
-      verified_by: 'CanaryGuard Nansen-Compatible Token Screener',
-      timestamp: Math.floor(Date.now() / 1000),
-      agent_continuation: AGENT_CONTINUATION,
-    });
+  const redirectToRugShield = (req: express.Request, res: express.Response) => {
+    const targetUrl = `https://rugshield-402.onrender.com${req.path}`;
+    res.setHeader('Location', targetUrl);
+    res.redirect(307, targetUrl);
   };
-  app.post('/api/v1/token-screener', handleNansenTokenScreener);
-  app.get('/api/v1/token-screener', handleNansenTokenScreener);
 
-  const handleNansenSmartMoneyNetflow = (req: express.Request, res: express.Response) => {
-    const raw = req.method === 'POST' ? req.body : req.query;
-    const token = (raw?.token_address || raw?.address || raw?.token || '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b').toString().trim();
-    res.locals.sanitized = true;
-    res.json({
-      status: 'success',
-      token_address: token,
-      chain: token.startsWith('0x') ? 'base' : 'solana',
-      netflow_1h_usd: 84200,
-      netflow_24h_usd: 428900,
-      netflow_7d_usd: 1940000,
-      smart_wallets_buying: 14,
-      smart_wallets_selling: 2,
-      signal: 'STRONG_ACCUMULATION',
-      verified_by: 'CanaryGuard Smart-Money Netflow Engine',
-      timestamp: Math.floor(Date.now() / 1000),
-      agent_continuation: AGENT_CONTINUATION,
-    });
-  };
-  app.post('/api/v1/smart-money/netflow', handleNansenSmartMoneyNetflow);
-  app.get('/api/v1/smart-money/netflow', handleNansenSmartMoneyNetflow);
-
-  const handleNansenSmartMoneyDexTrades = (req: express.Request, res: express.Response) => {
-    const raw = req.method === 'POST' ? req.body : req.query;
-    const token = (raw?.token_address || raw?.address || raw?.token || ASSET).toString().trim();
-    res.locals.sanitized = true;
-    res.json({
-      status: 'success',
-      token_address: token,
-      trades_count: 3,
-      dex_trades: [
-        { dex: 'Aerodrome SlipStream', chain: 'base', side: 'BUY', amount_usd: 45200, wallet_label: 'Smart Money Fund #4', tx_hash: '0x91a8c3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e' },
-        { dex: 'Jupiter v6 (Raydium CLMM)', chain: 'solana', side: 'BUY', amount_usd: 28900, wallet_label: 'Solana Whale Sniper #1', tx_hash: '5xK9mPqR7tVwYz2A3B4C5D6E7F8G9H1J2K3L4M5N' },
-        { dex: 'Uniswap V3 Base', chain: 'base', side: 'BUY', amount_usd: 19400, wallet_label: 'Wintermute Arb Bot', tx_hash: '0x3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d' },
-      ],
-      verified_by: 'CanaryGuard Smart-Money DEX Tape',
-      timestamp: Math.floor(Date.now() / 1000),
-      agent_continuation: AGENT_CONTINUATION,
-    });
-  };
-  app.post('/api/v1/smart-money/dex-trades', handleNansenSmartMoneyDexTrades);
-  app.get('/api/v1/smart-money/dex-trades', handleNansenSmartMoneyDexTrades);
-
-  const handleNansenWhoBoughtSold = (req: express.Request, res: express.Response) => {
-    const raw = req.method === 'POST' ? req.body : req.query;
-    const token = (raw?.token_address || raw?.address || raw?.token || '0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b').toString().trim();
-    res.locals.sanitized = true;
-    res.json({
-      status: 'success',
-      token_address: token,
-      window: '24h',
-      top_buyers_usd: 1240000,
-      top_sellers_usd: 811100,
-      net_volume_usd: 428900,
-      net_buyer_cohort: 'SMART_MONEY_AND_WHALES',
-      dev_wallet_dumping: false,
-      verified_by: 'CanaryGuard Token God Mode (TGM)',
-      timestamp: Math.floor(Date.now() / 1000),
-      agent_continuation: AGENT_CONTINUATION,
-    });
-  };
-  app.post('/api/v1/tgm/who-bought-sold', handleNansenWhoBoughtSold);
-  app.get('/api/v1/tgm/who-bought-sold', handleNansenWhoBoughtSold);
-
-  const handleNansenHolders = (req: express.Request, res: express.Response) => {
-    const raw = req.method === 'POST' ? req.body : req.query;
-    const token = (raw?.token_address || raw?.address || raw?.token || ASSET).toString().trim();
-    res.locals.sanitized = true;
-    res.json({
-      status: 'success',
-      token_address: token,
-      top_10_holders_pct: 14.8,
-      top_50_holders_pct: 36.2,
-      sybil_clusters_detected: 0,
-      lp_locked_pct: 99.4,
-      verdict: 'HEALTHY_HOLDER_DISTRIBUTION',
-      verified_by: 'CanaryGuard TGM Holder Inspector',
-      timestamp: Math.floor(Date.now() / 1000),
-      agent_continuation: AGENT_CONTINUATION,
-    });
-  };
-  app.post('/api/v1/tgm/holders', handleNansenHolders);
-  app.get('/api/v1/tgm/holders', handleNansenHolders);
-
-  const handleNansenAddressBalance = (req: express.Request, res: express.Response) => {
-    const raw = req.method === 'POST' ? req.body : req.query;
-    const addr = (raw?.address || raw?.wallet_address || payments.config.payTo).toString().trim();
-    res.locals.sanitized = true;
-    res.json({
-      status: 'success',
-      address: addr,
-      total_value_usd: 148920.50,
-      sanctioned: false,
-      drainer_exposure: false,
-      top_holdings: [
-        { symbol: 'USDC', balance_usd: 84200.00, chain: 'base' },
-        { symbol: 'SOL', balance_usd: 42100.50, chain: 'solana' },
-        { symbol: 'VIRTUAL', balance_usd: 22620.00, chain: 'base' },
-      ],
-      verified_by: 'CanaryGuard Wallet Profiler',
-      timestamp: Math.floor(Date.now() / 1000),
-      agent_continuation: AGENT_CONTINUATION,
-    });
-  };
-  app.post('/api/v1/profiler/address/current-balance', handleNansenAddressBalance);
-  app.get('/api/v1/profiler/address/current-balance', handleNansenAddressBalance);
+  app.all([
+    '/api/v1/token-screener',
+    '/api/v1/smart-money/netflow',
+    '/api/v1/smart-money/dex-trades',
+    '/api/v1/tgm/who-bought-sold',
+    '/api/v1/tgm/holders',
+    '/api/v1/profiler/address/current-balance',
+  ], redirectToRugShield);
 
   // ============================================================================
   // SOLANA ACTIONS & BLINKS (/actions.json + /api/actions/scan) + LIVE FEED
