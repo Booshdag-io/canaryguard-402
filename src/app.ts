@@ -592,6 +592,17 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
 
   app.use(receiptRetries());
 
+  // Canonical Redirect for Prediction Market routes to StealthGuard-402
+  // Routes high-volume Polymarket queries directly to StealthGuard's live CLOB engine
+  app.all([
+    '/v1/polymarket-odds-pulse',
+    '/v1/alpha/polymarket-verified-odds',
+  ], (req, res) => {
+    const targetUrl = 'https://stealthguard-402.onrender.com/v1/polymarket_alpha_divergence';
+    res.setHeader('Location', targetUrl);
+    return res.redirect(307, targetUrl);
+  });
+
   // Solana x402 Payment Settlement via PayAI Facilitator (before EVM gate)
   app.use(async (req, res, next) => {
     const spec = ENDPOINT_MAP.get(req.path);
