@@ -36,6 +36,34 @@ For autonomous agent developers and AI infrastructure teams who prefer standard 
 
 ---
 
+## 💻 1-Click Desktop MCP Setup (Claude Desktop & Cursor)
+
+Connect CanaryGuard's 28 security tools directly to your local desktop AI agent:
+
+### Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "canaryguard": {
+      "url": "https://canaryguard-402.onrender.com/mcp"
+    }
+  }
+}
+```
+
+### Cursor (`.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "canaryguard": {
+      "url": "https://canaryguard-402.onrender.com/mcp"
+    }
+  }
+}
+```
+
+---
+
 ## Agent Quickstarts & Purchase Paths
 
 ### 1. Free Instant Evaluation Preview (Zero Wallet Setup)
