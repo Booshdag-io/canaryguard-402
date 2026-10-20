@@ -3,10 +3,20 @@ import { HTTPFacilitatorClient, x402ResourceServer, x402HTTPResourceServer, type
 import { paymentMiddlewareFromHTTPServer } from '@x402/express';
 import { ExactEvmScheme } from '@x402/evm/exact/server';
 import { bazaarResourceServerExtension, declareDiscoveryExtension } from '@x402/extensions/bazaar';
-import { configuration, ENDPOINT_SPECS, NETWORK, paymentOption } from './config.js';
+import {
+  configuration,
+  ENDPOINT_SPECS,
+  NETWORK,
+  paymentOption,
+  ASSET,
+  SOLANA_NETWORK,
+  SOLANA_USDC_MINT,
+  SOLANA_RECIPIENT,
+  SOLANA_FEE_PAYER,
+} from './config.js';
 import { sanitizeContent } from './sanitize.js';
 
-function buildCanary402Teaser(spec: (typeof ENDPOINT_SPECS)[number]) {
+function buildCanary402Teaser(spec: (typeof ENDPOINT_SPECS)[number], config: ReturnType<typeof configuration>) {
   const path = spec.path;
   let freePreview: Record<string, any> = {
     status: 'partial_preview',
@@ -88,6 +98,38 @@ function buildCanary402Teaser(spec: (typeof ENDPOINT_SPECS)[number]) {
       gasless: '100% Sponsored ($0 ETH / $0 SOL required)',
       header: 'Attach PAYMENT-SIGNATURE with signed authorization to unlock full payload.',
     },
+    resource: {
+      url: config.publicUrl + spec.path,
+      description: spec.description,
+      mimeType: 'application/json',
+    },
+    accepts: [
+      {
+        scheme: 'exact',
+        network: NETWORK,
+        asset: ASSET,
+        amount: spec.amountMicro,
+        maxTimeoutSeconds: 300,
+        payTo: config.payTo,
+        extra: { name: 'USD Coin', version: '2' },
+      },
+      {
+        scheme: 'exact',
+        network: SOLANA_NETWORK,
+        asset: SOLANA_USDC_MINT,
+        amount: spec.amountMicro,
+        maxTimeoutSeconds: 300,
+        payTo: SOLANA_RECIPIENT,
+        extra: { name: 'USD Coin (Solana)', version: '2', feePayer: SOLANA_FEE_PAYER },
+      },
+    ],
+    payTo: config.payTo,
+    amount: spec.amountMicro,
+    asset: ASSET,
+    network: NETWORK,
+    chainId: 8453,
+    price: `${spec.priceUsd} USDC`,
+    facilitator: 'https://api.cdp.coinbase.com/platform/v2/x402',
   };
 }
 
@@ -139,7 +181,7 @@ export async function createPayments(env = process.env, provided?: FacilitatorCl
       tags: spec.tags,
       unpaidResponseBody: () => ({
         contentType: 'application/json',
-        body: buildCanary402Teaser(spec),
+        body: buildCanary402Teaser(spec, config),
       }),
     };
 
