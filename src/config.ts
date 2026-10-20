@@ -939,7 +939,8 @@ export const NANSEN_COMPAT_SPECS: EndpointSpec[] = [
 export const ENDPOINT_SPECS: EndpointSpec[] = [
   ...PRIMARY_15_SPECS,
   ...VEXTORIUM_COMPAT_SPECS,
-  ...NANSEN_COMPAT_SPECS,
+  // Note: NANSEN_COMPAT_SPECS routes are canonically owned by rugshield-402
+  // to avoid route cloning and metric dilution on Zero.xyz / Roundhouse AI
 ];
 
 export const ENDPOINT_MAP = new Map<string, EndpointSpec>(
