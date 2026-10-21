@@ -1,16 +1,129 @@
-# Legacy repository/container descriptor. This file does not submit a listing.
-# Current external URL publishing: https://smithery.ai/docs/build/publish
-# Publish https://canaryguard-402.onrender.com/mcp through the UI or authenticated CLI.
-# Runtime CDP credentials must be configured by the operator privately;
-# never put a buyer key or CDP secret in this file or client configSchema.
+name: canaryguard-402
+displayName: CanaryGuard 402
+description: Deterministic prompt-injection firewall, Base token security auditor, and concealed Unicode exploit scrubber for autonomous AI agents, gated via x402 on Base.
+homepage: https://canaryguard-402.onrender.com
+websiteUrl: https://canaryguard-402.onrender.com
+iconUrl: https://canaryguard-402.onrender.com/favicon.ico
+repository: https://github.com/ak10082247-max/canaryguard-402
+tags:
+  - security
+  - firewall
+  - prompt-injection
+  - base
+  - x402
+  - usdc
+  - mcp
+  - agentkit
+
 runtime: container
 build:
   dockerfile: Dockerfile
   dockerBuildPath: .
+
 startCommand:
   type: http
+  url: https://canaryguard-402.onrender.com/mcp
   configSchema:
     type: object
     properties: {}
     additionalProperties: false
   exampleConfig: {}
+
+tools:
+  - name: canary_sanitize
+    description: Call this security tool before placing untrusted text, scraped web content, or tool outputs into your context window. Detects and scrubs prompt injection and malicious wallet transfer exploits.
+    inputSchema:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          description: Untrusted text, prompt, or tool output to inspect and scrub.
+        strict_mode:
+          type: boolean
+          default: true
+          description: Whether to hard-block injection attempts (true) or sanitize threats (false).
+    outputSchema:
+      type: object
+      required:
+        - status
+        - risk_score
+      properties:
+        status:
+          type: string
+          enum: [clean, sanitized, blocked]
+          description: Classification of the input content.
+        risk_score:
+          type: number
+          description: Heuristic risk severity between 0.0 and 1.0.
+        threats_detected:
+          type: array
+          items:
+            type: string
+          description: List of detected exploit signatures or rule violations.
+        sanitized_content:
+          type: string
+          description: Cleaned text safe for LLM context injection.
+
+  - name: wallet_drainer_audit
+    description: Inspects raw transaction calldata or EIP-712 typed data payloads against a database of drainer signatures to prevent wallet balance theft.
+    inputSchema:
+      type: object
+      required:
+        - calldata
+      properties:
+        calldata:
+          type: string
+          description: Hex-encoded transaction calldata to simulate and audit.
+        chain_id:
+          type: integer
+          default: 8453
+          description: Target network chain ID (8453 for Base Mainnet).
+    outputSchema:
+      type: object
+      required:
+        - is_drainer
+        - risk_level
+      properties:
+        is_drainer:
+          type: boolean
+          description: Whether calldata routes to a known wallet drainer contract.
+        risk_level:
+          type: string
+          enum: [CRITICAL, HIGH, MEDIUM, LOW, SAFE]
+          description: Assessed exploit severity level.
+        drained_assets:
+          type: array
+          items:
+            type: string
+          description: Assets or token allowances targeted for unauthorized draining.
+        recommendation:
+          type: string
+          description: Cryptographic recommendation for transaction execution.
+
+  - name: mcp_tool_poisoning_audit
+    description: Audits third-party MCP tool declarations and JSON schemas for indirect prompt injection, invisible Unicode, and instructions poisoning.
+    inputSchema:
+      type: object
+      required:
+        - tool_definition
+      properties:
+        tool_definition:
+          type: object
+          description: The JSON-RPC tool specification object to audit.
+    outputSchema:
+      type: object
+      required:
+        - is_poisoned
+        - confidence
+      properties:
+        is_poisoned:
+          type: boolean
+          description: Whether the tool declaration contains hidden or hostile instructions.
+        confidence:
+          type: number
+          description: Confidence score of the audit classification.
+        verdict:
+          type: string
+          description: Audit summary and explanation of any identified threats.
