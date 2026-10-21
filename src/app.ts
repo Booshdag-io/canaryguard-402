@@ -11,6 +11,7 @@ import {
   DESCRIPTION,
   ENDPOINT_MAP,
   ENDPOINT_SPECS,
+  type EndpointSpec,
   Input,
   inputJsonSchema,
   NETWORK,
@@ -496,10 +497,56 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     });
   });
 
+  function buildCanaryOutputSchema(spec: EndpointSpec) {
+    if (spec.operationId === 'sanitizeContent') {
+      return {
+        type: 'object',
+        required: ['status', 'risk_score'],
+        properties: {
+          status: { type: 'string', enum: ['clean', 'sanitized', 'blocked'], description: 'Classification of the input content' },
+          risk_score: { type: 'number', minimum: 0, maximum: 1, description: 'Heuristic risk severity between 0.0 and 1.0' },
+          injection_detected: { type: 'boolean', description: 'Whether an exploit or injection payload was identified' },
+          threats_neutralized: { type: 'array', items: { type: 'string' }, description: 'Neutralized prompt injection patterns' },
+          sanitized_content: { type: 'string', description: 'Sanitized text safe for model context' },
+          safety_receipt: { type: 'string', description: 'Cryptographic safety verification proof' }
+        }
+      };
+    }
+    const properties: Record<string, any> = {};
+    const required: string[] = [];
+    if (spec.outputExample && typeof spec.outputExample === 'object') {
+      for (const [key, val] of Object.entries(spec.outputExample)) {
+        required.push(key);
+        if (Array.isArray(val)) {
+          properties[key] = { type: 'array', items: { type: typeof (val[0] || 'string') } };
+        } else if (val === null) {
+          properties[key] = { type: 'string', nullable: true };
+        } else if (typeof val === 'number') {
+          properties[key] = { type: Number.isInteger(val) ? 'integer' : 'number' };
+        } else if (typeof val === 'boolean') {
+          properties[key] = { type: 'boolean' };
+        } else if (typeof val === 'object') {
+          properties[key] = { type: 'object' };
+        } else {
+          properties[key] = { type: 'string' };
+        }
+      }
+    }
+    return {
+      type: 'object',
+      properties: Object.keys(properties).length > 0 ? properties : {
+        status: { type: 'string', description: 'Execution status' },
+        result: { type: 'object', description: 'Cryptographic analysis result' }
+      },
+      required: required.length > 0 ? required.slice(0, 3) : ['status']
+    };
+  }
+
   const canaryMcpTools = ENDPOINT_SPECS.map(spec => ({
     name: spec.operationId === 'sanitizeContent' ? 'canary_sanitize' : spec.operationId,
     description: `${spec.description} Price: ${spec.priceUsd} USDC on Base.`,
     inputSchema: spec.inputSchema || inputJsonSchema,
+    outputSchema: buildCanaryOutputSchema(spec),
     annotations: { readOnlyHint: true, destructiveHint: false, openWorldHint: true },
   }));
 
