@@ -335,6 +335,44 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     });
   });
 
+  const faqHelpHandler = (_req: express.Request, res: express.Response) => {
+    res.json({
+      service: 'CanaryGuard 402',
+      tagline: 'Autonomous AI Agent Firewall & On-Chain Intelligence Suite',
+      faq: [
+        {
+          question: 'What is CanaryGuard 402?',
+          answer: 'CanaryGuard is a high-speed, deterministic prompt-injection firewall, smart contract security auditor, and threat intelligence oracle for autonomous AI agents on Base and Solana.'
+        },
+        {
+          question: 'How do payments work?',
+          answer: 'All endpoints are metered via HTTP 402 (x402 V2). Agents pay micropayments ($0.010 - $0.020 USDC) via EIP-712 TransferWithAuthorization on Base or SPL Token TransferChecked on Solana.'
+        },
+        {
+          question: 'Do I need ETH or SOL for gas?',
+          answer: 'No. Settlements are 100% gasless ($0 ETH / $0 SOL required) through Coinbase CDP and PayAI facilitator sponsorship.'
+        },
+        {
+          question: 'Where can I find the API documentation and MCP manifest?',
+          answer: 'OpenAPI specification is available at /openapi.json, x402 discovery at /.well-known/x402.json, and Model Context Protocol cards at /mcp and /mcp/server-card.'
+        }
+      ],
+      resources: {
+        documentation: `${payments.config.publicUrl}/openapi.json`,
+        discovery: `${payments.config.publicUrl}/.well-known/x402.json`,
+        mcp_card: `${payments.config.publicUrl}/mcp/server-card`,
+        bounty_sandbox: `${payments.config.publicUrl}/bounty.html`,
+        telemetry: `${payments.config.publicUrl}/v1/telemetry/deliveries`,
+      },
+      support: {
+        contact: 'security@canaryguard.network',
+        github: 'https://github.com/ak10082247-max/canaryguard-402'
+      }
+    });
+  };
+
+  app.get(['/help', '/faq', '/faqs', '/support', '/guide', '/docs/faq'], faqHelpHandler);
+
   app.get(['/about', '/about-us', '/team', '/leadership', '/company', '/contact', '/contact-us', '/press'], (_req, res) => {
     res.json({
       name: 'CanaryGuard 402',
@@ -478,9 +516,12 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
 
   app.get([
     '/mcp',
+    '/mcp/server-card',
+    '/mcp/server-card.json',
     '/server-card.json',
     '/.well-known/mcp',
     '/.well-known/mcp.json',
+    '/.well-known/mcp/server-card',
     '/.well-known/mcp/server-card.json',
     '/.well-known/mcp/server-cards.json',
     '/.well-known/mcp-server-card',
