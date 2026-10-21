@@ -51,7 +51,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   const app = express();
   app.disable('x-powered-by');
   app.set('case sensitive routing', true);
-  app.set('strict routing', true);
+  app.set('strict routing', false);
   if (process.env.RENDER) app.set('trust proxy', 1);
 
   app.use(helmet({ contentSecurityPolicy: false }));
