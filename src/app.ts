@@ -543,6 +543,26 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     res.json(glamaManifest);
   });
 
+  const oauthResourceMetadata = {
+    resource: payments.config.publicUrl,
+    authorization_servers: [],
+    scopes_supported: ['mcp:read', 'mcp:call'],
+    bearer_methods_supported: ['header'],
+    auth_schemes: ['x402-v2-eip712', 'x402-v2-solana'],
+    payment_recipient: payments.config.payTo,
+    documentation: `${payments.config.publicUrl}/docs`,
+    note: 'Protected via on-chain x402 V2 gasless micropayments (EIP-712 / SPL TransferChecked).'
+  };
+
+  app.get([
+    '/.well-known/oauth-protected-resource',
+    '/.well-known/oauth-protected-resource/mcp',
+    '/.well-known/oauth-authorization-server',
+    '/.well-known/openid-configuration'
+  ], (_req, res) => {
+    res.json(oauthResourceMetadata);
+  });
+
   const canaryAgentRegistration = {
     type: 'https://eips.ethereum.org/EIPS/eip-8004#registration-v1',
     name: 'CanaryGuard 402 — Autonomous Prompt-Injection Firewall & Security Gateway',
@@ -1743,6 +1763,19 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
       });
     }
 
+    if (method === 'server/discover' || method === 'server/info') {
+      return res.json({
+        jsonrpc: '2.0',
+        id,
+        result: {
+          protocolVersion: '2024-11-05',
+          serverInfo: { name: 'canaryguard-402', version: SERVICE_VERSION },
+          capabilities: { tools: { listChanged: false } },
+          tools: canaryMcpTools,
+        },
+      });
+    }
+
     if (method === 'ping') {
       return res.json({ jsonrpc: '2.0', id, result: {} });
     }
@@ -1780,6 +1813,15 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
           },
         });
       }
+    }
+
+    // Standard JSON-RPC 2.0 error response for unrecognized methods
+    if (req.body?.jsonrpc === '2.0' || req.originalUrl === '/mcp') {
+      return res.json({
+        jsonrpc: '2.0',
+        id,
+        error: { code: -32601, message: `Method not found: ${method}` },
+      });
     }
 
     return (handler as any)(req, res, next);
