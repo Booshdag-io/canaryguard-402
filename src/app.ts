@@ -1410,15 +1410,21 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   app.get('/v1/yield/safe-allocation', handleSafeYieldAllocation);
 
   // ============================================================================
-  // 6 NANSEN-COMPATIBLE ROUTES CANONICALLY HOSTED & MONETIZED ON RUGSHIELD-402
-  // HTTP 307 Temporary Redirect preserves POST method & body to route callers directly
-  // to RugShield's paid x402 paywall ($0.010 USDC) preventing free data leakage.
+  // RFC 8594 RETIREMENT: 6 DUPLICATE NANSEN ROUTES PERMANENTLY RETIRED ON CANARYGUARD
+  // Return HTTP 410 Gone + past Sunset header so indexers (Agent Economy Report,
+  // Roundhouse AI, SwarmBazaar) purge duplicate routes without counting against uptime.
   // ============================================================================
 
-  const redirectToRugShield = (req: express.Request, res: express.Response) => {
-    const targetUrl = `https://rugshield-402.onrender.com${req.path}`;
-    res.setHeader('Location', targetUrl);
-    res.redirect(307, targetUrl);
+  const handleRetiredNansenRoute = (req: express.Request, res: express.Response) => {
+    const canonicalUrl = `https://rugshield-402.onrender.com${req.path}`;
+    res.status(410)
+      .set('Sunset', 'Mon, 19 Oct 2026 00:00:00 GMT')
+      .set('Link', `<${canonicalUrl}>; rel="successor-version"`)
+      .json({
+        error: 'gone',
+        message: `Endpoint permanently retired on canaryguard-402 and moved to canonical host ${canonicalUrl}`,
+        canonical_endpoint: canonicalUrl,
+      });
   };
 
   app.all([
@@ -1428,7 +1434,7 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     '/api/v1/tgm/who-bought-sold',
     '/api/v1/tgm/holders',
     '/api/v1/profiler/address/current-balance',
-  ], redirectToRugShield);
+  ], handleRetiredNansenRoute);
 
   // ============================================================================
   // SOLANA ACTIONS & BLINKS (/actions.json + /api/actions/scan) + LIVE FEED
