@@ -519,6 +519,8 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     '/mcp/server-card',
     '/mcp/server-card.json',
     '/server-card.json',
+    '/server.json',
+    '/.well-known/server.json',
     '/.well-known/mcp',
     '/.well-known/mcp.json',
     '/.well-known/mcp/server-card',
@@ -529,6 +531,16 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     '/.well-known/ai-catalog.json',
   ], (_req, res) => {
     res.json(canaryServerCard);
+  });
+
+  const glamaManifest = {
+    $schema: 'https://glama.ai/mcp/schemas/server.json',
+    maintainers: ['ak10082247-max'],
+    homepage: 'https://canaryguard-402.onrender.com'
+  };
+
+  app.get(['/glama.json', '/.well-known/glama.json'], (_req, res) => {
+    res.json(glamaManifest);
   });
 
   const canaryAgentRegistration = {
