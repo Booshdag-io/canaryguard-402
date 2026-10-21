@@ -54,6 +54,21 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   app.set('strict routing', false);
   if (process.env.RENDER) app.set('trust proxy', 1);
 
+  // Path normalizer: strip trailing slashes, quotes, backslashes, brackets, and encoded noise
+  // to eliminate 404s from terminal/Render log auto-linkers or JSON copy-pasting
+  app.use((req, res, next) => {
+    let decodedPath = req.path;
+    try {
+      decodedPath = decodeURIComponent(req.path);
+    } catch {}
+    const cleanPath = decodedPath.replace(/[\/\\"'}\],;\s]+$/, '');
+    if (cleanPath !== req.path && cleanPath.length > 0) {
+      const query = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+      return res.redirect(308, cleanPath + query);
+    }
+    next();
+  });
+
   app.use(helmet({ contentSecurityPolicy: false }));
   app.use(cors({
     origin: '*',
