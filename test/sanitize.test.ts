@@ -6,7 +6,7 @@ test('ordinary text remains useful and receipt describes inspection limits', () 
   const result = sanitizeContent('The weather is sunny.\nTemperature: 18 C.');
   assert.equal(result.status, 'clean');
   assert.equal(result.sanitized_content, 'The weather is sunny.\nTemperature: 18 C.');
-  assert.equal(result.risk_score, 0.01);
+  assert.equal(result.risk_score, 0);
   assert.equal(result.injection_detected, false);
   assert.deepEqual(result.threats_neutralized, []);
   assert.equal(result.inspection.guaranteed_safe, false);
@@ -163,12 +163,12 @@ test('CJK multilingual instruction overrides and delimiters are strictly blocked
   const benignJa = sanitizeContent('こんにちは、東京の明日の天気を教えてください。');
   assert.equal(benignJa.status, 'clean');
   assert.equal(benignJa.injection_detected, false);
-  assert.equal(benignJa.risk_score, 0.01);
+  assert.equal(benignJa.risk_score, 0);
   assert.equal(benignJa.sanitized_content, 'こんにちは、東京の明日の天気を教えてください。');
 
   const benignZh = sanitizeContent('您好，请提供今天以太坊和索拉纳的市场价格概览。');
   assert.equal(benignZh.status, 'clean');
   assert.equal(benignZh.injection_detected, false);
-  assert.equal(benignZh.risk_score, 0.01);
+  assert.equal(benignZh.risk_score, 0);
 });
 

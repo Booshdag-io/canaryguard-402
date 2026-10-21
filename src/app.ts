@@ -349,8 +349,9 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     })),
     mcp: {
       url: payments.config.publicUrl + '/mcp',
-      tools_count: ENDPOINT_SPECS.length,
+      tool: 'canary_sanitize',
       primary_tool: 'canary_sanitize',
+      tools_count: ENDPOINT_SPECS.length,
       tools: ENDPOINT_SPECS.map(s => ({
         name: s.operationId === 'sanitizeContent' ? 'canary_sanitize' : s.operationId,
         description: s.description,
