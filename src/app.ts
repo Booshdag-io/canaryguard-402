@@ -681,6 +681,31 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
 
   app.use(receiptRetries());
 
+  // ============================================================================
+  // RFC 8594 RETIREMENT: 6 DUPLICATE NANSEN ROUTES PERMANENTLY RETIRED ON CANARYGUARD
+  // Return HTTP 410 Gone + past Sunset header so indexers (Agent Economy Report,
+  // Roundhouse AI, SwarmBazaar) purge duplicate routes without counting against uptime.
+  // ============================================================================
+  const handleRetiredNansenRoute = (req: express.Request, res: express.Response) => {
+    const canonicalUrl = `https://rugshield-402.onrender.com${req.originalUrl}`;
+    res.status(410)
+      .set('Sunset', 'Tue, 20 Oct 2026 00:00:00 GMT')
+      .set('Link', `<${canonicalUrl}>; rel="successor-version"`)
+      .json({
+        error: 'gone',
+        canonical_url: canonicalUrl,
+      });
+  };
+
+  app.all([
+    '/api/v1/token-screener',
+    '/api/v1/smart-money/netflow',
+    '/api/v1/smart-money/dex-trades',
+    '/api/v1/tgm/who-bought-sold',
+    '/api/v1/tgm/holders',
+    '/api/v1/profiler/address/current-balance',
+  ], handleRetiredNansenRoute);
+
   // Canonical Redirect for Prediction Market routes to StealthGuard-402
   // Routes high-volume Polymarket queries directly to StealthGuard's live CLOB engine
   app.all([
@@ -1497,33 +1522,6 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   };
   app.post('/v1/yield/safe-allocation', handleSafeYieldAllocation);
   app.get('/v1/yield/safe-allocation', handleSafeYieldAllocation);
-
-  // ============================================================================
-  // RFC 8594 RETIREMENT: 6 DUPLICATE NANSEN ROUTES PERMANENTLY RETIRED ON CANARYGUARD
-  // Return HTTP 410 Gone + past Sunset header so indexers (Agent Economy Report,
-  // Roundhouse AI, SwarmBazaar) purge duplicate routes without counting against uptime.
-  // ============================================================================
-
-  const handleRetiredNansenRoute = (req: express.Request, res: express.Response) => {
-    const canonicalUrl = `https://rugshield-402.onrender.com${req.path}`;
-    res.status(410)
-      .set('Sunset', 'Mon, 19 Oct 2026 00:00:00 GMT')
-      .set('Link', `<${canonicalUrl}>; rel="successor-version"`)
-      .json({
-        error: 'gone',
-        message: `Endpoint permanently retired on canaryguard-402 and moved to canonical host ${canonicalUrl}`,
-        canonical_endpoint: canonicalUrl,
-      });
-  };
-
-  app.all([
-    '/api/v1/token-screener',
-    '/api/v1/smart-money/netflow',
-    '/api/v1/smart-money/dex-trades',
-    '/api/v1/tgm/who-bought-sold',
-    '/api/v1/tgm/holders',
-    '/api/v1/profiler/address/current-balance',
-  ], handleRetiredNansenRoute);
 
   // ============================================================================
   // SOLANA ACTIONS & BLINKS (/actions.json + /api/actions/scan) + LIVE FEED
