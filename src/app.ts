@@ -273,15 +273,48 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
     res.status(200).end();
   });
 
-  app.get('/llms.txt', (_req, res) => {
-    const p = path.join(publicDir, 'llms.txt');
+  app.get(['/llms.txt', '/llms-full.txt'], (req, res) => {
+    const filename = req.path.includes('full') ? 'llms-full.txt' : 'llms.txt';
+    const p = path.join(publicDir, filename);
     if (fs.existsSync(p)) return res.sendFile(p);
-    res.type('text/plain').send('# CanaryGuard 402\nPrompt injection firewall & 15-endpoint Base intelligence suite.');
+    const fallback = path.join(publicDir, 'llms.txt');
+    if (fs.existsSync(fallback)) return res.sendFile(fallback);
+    res.type('text/plain').send('# CanaryGuard 402\nPrompt injection firewall & 34-endpoint Base and Solana intelligence suite.');
   });
 
-  // Compliance, SEO & Metadata Routes
+  // Compliance, SEO & Generative Engine Optimization (GEO) Metadata Routes
   const handleRobots = (_req: express.Request, res: express.Response) => {
-    res.type('text/plain').send('User-agent: *\nAllow: /\nDisallow: /v1/telemetry/\nSitemap: https://canaryguard-402.onrender.com/sitemap.xml\n');
+    res.type('text/plain').send(`User-agent: *
+Allow: /
+Disallow: /v1/telemetry/
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Meta-ExternalAgent
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://canaryguard-402.onrender.com/sitemap.xml
+LLMs-Txt: https://canaryguard-402.onrender.com/llms.txt
+`);
   };
   app.get(['/robots.txt', /^\/robots\.txt.*$/], handleRobots);
   app.head(['/robots.txt', /^\/robots\.txt.*$/], handleRobots);
@@ -289,10 +322,15 @@ export async function createApp(payments: Awaited<ReturnType<typeof createPaymen
   const handleSitemap = (_req: express.Request, res: express.Response) => {
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://canaryguard-402.onrender.com/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>https://canaryguard-402.onrender.com/bounty.html</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>
-  <url><loc>https://canaryguard-402.onrender.com/stats</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
-  <url><loc>https://canaryguard-402.onrender.com/pricing</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/</loc><changefreq>hourly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/llms.txt</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/llms-full.txt</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/openapi.json</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/.well-known/x402.json</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/bounty.html</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/v1/sanitize/preview</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/stats</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://canaryguard-402.onrender.com/pricing</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://canaryguard-402.onrender.com/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://canaryguard-402.onrender.com/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 </urlset>`);
